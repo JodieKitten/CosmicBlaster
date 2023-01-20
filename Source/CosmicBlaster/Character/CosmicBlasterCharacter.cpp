@@ -10,6 +10,9 @@
 #include "CosmicBlaster/Weapon/Weapon.h"
 #include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 
+/*
+Initial functions
+*/
 ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -31,6 +34,8 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void ACosmicBlasterCharacter::BeginPlay()
@@ -53,6 +58,9 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAxis("LookUp", this, &ACosmicBlasterCharacter::LookUp);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ACosmicBlasterCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACosmicBlasterCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ACosmicBlasterCharacter::AimButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ACosmicBlasterCharacter::AimButtonReleased);
 
 }
 
@@ -65,6 +73,10 @@ void ACosmicBlasterCharacter::PostInitializeComponents()
 	}
 }
 
+
+/*
+Replication functions
+*/
 void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -84,6 +96,81 @@ void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	}
 }
 
+void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+} //for client use
+
+/*
+Movement functions
+*/
+
+void ACosmicBlasterCharacter::MoveForward(float Value)
+{
+	if (Controller && Value != 0.f)
+	{
+		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
+		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X));
+		AddMovementInput(Direction, Value);
+	}
+}
+
+void ACosmicBlasterCharacter::MoveRight(float Value)
+{
+	if (Controller && Value != 0.f)
+	{
+		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
+		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y));
+		AddMovementInput(Direction, Value);
+	}
+}
+
+void ACosmicBlasterCharacter::Turn(float Value)
+{
+	AddControllerYawInput(Value);
+}
+
+void ACosmicBlasterCharacter::LookUp(float Value)
+{
+	AddControllerPitchInput(Value);
+}
+
+void ACosmicBlasterCharacter::CrouchButtonPressed()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch(); //unreal pre-made function
+	}
+	else 
+	{
+		Crouch(); //unreal pre-made function
+	}
+
+}
+
+void ACosmicBlasterCharacter::AimButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(true);
+	}
+}
+
+void ACosmicBlasterCharacter::AimButtonReleased()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(false);
+	}
+}
+
+/*
+Equip/weapon functions
+*/
+
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -101,38 +188,27 @@ void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 	}
 }
 
-void ACosmicBlasterCharacter::MoveForward(float Value)
+bool ACosmicBlasterCharacter::IsWeaponEquipped()
 {
-	if (Controller && Value != 0.f)
-	{
-		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
-		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X));
-		AddMovementInput(Direction, Value);
-	}
+	return (Combat && Combat->EquippedWeapon);
 }
 
-void ACosmicBlasterCharacter::MoveRight(float Value)
-{
-	AddControllerYawInput(Value);
-}
-
-void ACosmicBlasterCharacter::Turn(float Value)
-{
-}
-
-void ACosmicBlasterCharacter::LookUp(float Vlaue)
-{
-}
-
-void ACosmicBlasterCharacter::EquipButtonPressed()
+void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 {
 	if (Combat)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		if (HasAuthority()) //server
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed(); //client
+		}
 	}
 }
 
-
-
-
-
+bool ACosmicBlasterCharacter::IsAiming()
+{
+	return (Combat && Combat->bAiming);
+}
