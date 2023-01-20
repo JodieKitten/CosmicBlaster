@@ -28,11 +28,17 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 
+	/* HUD */
+	void ShowPickupWidget(bool bShowWidget);
+
 protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
 	/* Components */
@@ -48,4 +54,7 @@ private:
 	/* States */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
+
+public:
+	FORCEINLINE void SetWeaponState(EWeaponState State){ WeaponState = State; }
 };
