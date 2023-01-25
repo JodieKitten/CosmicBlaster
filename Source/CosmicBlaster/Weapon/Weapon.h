@@ -8,6 +8,8 @@
 
 class USphereComponent;
 class UWidgetComponent;
+class UAnimationAsset;
+class UTexture2D;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -28,10 +30,26 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void Fire(const FVector& HitTarget);
 
 	/* HUD */
 	void ShowPickupWidget(bool bShowWidget);
+
+	/* Textures for crosshairs */
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsCentre;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsLeft;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsRight;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsTop;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsBottom;
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,12 +71,19 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UWidgetComponent* PickupWidget;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ACasing> CasingClass;
+
+
 	/* States */
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState,VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
 	UFUNCTION()
 	void OnRep_WeaponState();
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UAnimationAsset* FireAnimation;
 
 public:
 	void SetWeaponState(EWeaponState State);
