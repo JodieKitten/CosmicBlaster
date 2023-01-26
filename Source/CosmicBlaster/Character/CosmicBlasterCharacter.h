@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "CosmicBlaster/BlasterTypes/TurningInPlace.h"
+#include "CosmicBlaster/Interfaces/InteractWithCrosshairsInterface.h"
 #include "CosmicBlasterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -15,7 +16,7 @@ class UCombatComponent;
 class UAnimMontage;
 
 UCLASS()
-class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter
+class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
@@ -95,5 +96,6 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	AWeapon* GetEquippedWeapon();
-	
+	FVector GetHitTarget() const;
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
