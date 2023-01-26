@@ -138,6 +138,7 @@ void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ACosmicBlasterCharacter, OverlappingWeapon, COND_OwnerOnly); //pickup widget only show to the owner of the character (not everyone on the server)
+	DOREPLIFETIME(ACosmicBlasterCharacter, Health);
 }
 
 void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
@@ -350,6 +351,10 @@ float ACosmicBlasterCharacter::CalculateSpeed()
 /*
 Equip/Weapon functions
 */
+
+void ACosmicBlasterCharacter::OnRep_Health()
+{
+}
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
