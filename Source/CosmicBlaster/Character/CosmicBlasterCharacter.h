@@ -22,17 +22,20 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 
 public:
 	ACosmicBlasterCharacter();
+	/* Overrides */
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void PostInitializeComponents() override;
+	virtual void OnRep_ReplicatedMovement() override;
 
+	/*Montages*/
 	void PlayFireMontage(bool bAiming);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit();
 
 protected:
 	virtual void BeginPlay() override;
@@ -50,17 +53,33 @@ protected:
 	void FireButtonReleased();
 	virtual void Jump() override;
 
+	/* Aim Offset */
 	void AimOffset(float DeltaTime);
+	void CalculateAO_Pitch();
+	void SimProxiesTurn();
+
+	/* Montages */
 	void PlayHitReactMontage();
 
 private:
+	/* Movement */
+	ETurningInPlace TurningInPlace;
+	void TurnInPlace(float DeltaTime);
+	float CalculateSpeed();
+	bool bRotateRootBone;
+	float TurnThreshold = 0.5f;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotation;
+	float ProxyYaw;
+	float TimeSinceLastMovementReplication;
+
+
 	/* Replication */
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed(); // RPC's (remote procedure calls) functions for client to server (otherwise other way around)
-	
 
 
 	/* Components */
@@ -73,6 +92,11 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UCombatComponent* Combat;
 
+	void HideCameraIfCharacterClose();
+
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f;
+
 	/* HUD */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* OverheadWidget;
@@ -81,23 +105,18 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon) //will call the function when overlapping the weapon
 	AWeapon* OverlappingWeapon;
 
+	/* Montages */
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* FireWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
 
+	/* Aim Offset */
 	float AO_Yaw;
 	float InterpAO_Yaw;
 	float AO_Pitch;
 	FRotator StartingAimRotation;
-
-	ETurningInPlace TurningInPlace;
-
-	void TurnInPlace(float DeltaTime);
-	void HideCameraIfCharacterClose();
-	UPROPERTY(EditAnywhere)
-	float CameraThreshold = 200.f;
 
 public:
 	//getters and setters
@@ -110,4 +129,5 @@ public:
 	AWeapon* GetEquippedWeapon();
 	FVector GetHitTarget() const;
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 };

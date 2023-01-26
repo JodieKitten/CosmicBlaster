@@ -25,19 +25,23 @@ public:
 	UCombatComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void EquipWeapon(AWeapon* WeaponToEquip);
 
 protected:
 	virtual void BeginPlay() override;	
 
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
+
 	void SetAiming(bool bIsAiming);
-	void FireButtonPressed(bool bPressed);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
 
-	UFUNCTION()
-	void OnRep_EquippedWeapon();
+	void FireButtonPressed(bool bPressed);
+
+	void Fire();
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
@@ -46,7 +50,6 @@ protected:
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
-
 	void SetHUDCrosshairs(float DeltaTime);
 
 private:
@@ -57,18 +60,19 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 
+	/* Aiming / Firing */
 	UPROPERTY(Replicated)
 	bool bAiming;
 
+	bool bFireButtonPressed;
+	FVector HitTarget;
+
+	/* Walk speeds */
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
-
-	bool bFireButtonPressed;
-
-	FVector HitTarget;
 
 	/* HUD/Crosshairs */
 	float CrosshairVelocityFactor;
@@ -77,9 +81,9 @@ private:
 	float CrosshairShootingFactor;
 	FHUDPackage HUDPackage;
 
-	/* Aiming and FOV */
+	/* FOV */
+	void InterpFOV(float DeltaTime);
 	float DefaultFOV;
-
 	float CurrentFOV;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
@@ -88,5 +92,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float ZoomInterpSpeed = 20.f;
 
-	void InterpFOV(float DeltaTime);
+	/* Automatic fire */
+	FTimerHandle FireTimer;
+	void StartFireTimer();
+	void FireTimerFinished();
+	bool bCanFire = true;
 };

@@ -11,7 +11,9 @@
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
 
-
+/*
+Initial functions
+*/
 
 AWeapon::AWeapon()
 {
@@ -81,6 +83,22 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
+/*
+HUD
+*/
+
+void AWeapon::ShowPickupWidget(bool bShowWidget)
+{
+	if (PickupWidget)
+	{
+		PickupWidget->SetVisibility(bShowWidget);
+	}
+}
+
+/*
+Weapon State
+*/
+
 void AWeapon::OnRep_WeaponState()
 {
 	switch (WeaponState)
@@ -103,13 +121,10 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	}
 }
 
-void AWeapon::ShowPickupWidget(bool bShowWidget)
-{
-	if (PickupWidget)
-	{
-		PickupWidget->SetVisibility(bShowWidget);
-	}
-}
+
+/*
+Fire
+*/
 
 void AWeapon::Fire(const FVector& HitTarget)
 {

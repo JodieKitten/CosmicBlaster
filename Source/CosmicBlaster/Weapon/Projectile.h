@@ -36,15 +36,17 @@ private:
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
 	UPROPERTY(EditAnywhere)
-	UParticleSystem* Tracer;
+	UParticleSystemComponent* TracerComponent;
 
 	UPROPERTY(EditAnywhere)
-	UParticleSystemComponent* TracerComponent;
+	UParticleSystem* Tracer;
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles;
 
 	UPROPERTY(EditAnywhere)
-	USoundCue* ImpactSound;
+	UParticleSystem* ImpactBodyParticles;
 
+	UPROPERTY(EditAnywhere)
+	USoundCue* ImpactSound;
 };
