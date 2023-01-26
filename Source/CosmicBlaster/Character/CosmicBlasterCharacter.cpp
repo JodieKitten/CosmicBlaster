@@ -12,6 +12,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "CosmicBlasterAnimInstance.h"
+#include "CosmicBlaster/CosmicBlaster.h"
 
 /*
 Initial functions
@@ -42,6 +43,7 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 850.f);
 
@@ -59,6 +61,7 @@ void ACosmicBlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	AimOffset(DeltaTime);
+	HideCameraIfCharacterClose();
 }
 
 void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -102,6 +105,19 @@ void ACosmicBlasterCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ACosmicBlasterCharacter::PlayHitReactMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		FName SectionName("FromFront");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 
 /*
 Replication functions
@@ -132,6 +148,11 @@ void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
 		Combat->EquipWeapon(OverlappingWeapon);
 	}
 } //for client use
+
+void ACosmicBlasterCharacter::MulticastHit_Implementation()
+{
+	PlayHitReactMontage();
+}
 
 /*
 Movement functions
@@ -284,6 +305,28 @@ void ACosmicBlasterCharacter::TurnInPlace(float DeltaTime)
 		{
 			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 			StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		}
+	}
+}
+
+void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
+{
+	if (!IsLocallyControlled()) return;
+
+	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold)
+	{
+		GetMesh()->SetVisibility(false);
+		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		{
+			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		{
+			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
 }

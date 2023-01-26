@@ -28,6 +28,9 @@ public:
 
 	void PlayFireMontage(bool bAiming);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit();
+
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -48,6 +51,7 @@ protected:
 	virtual void Jump() override;
 
 	void AimOffset(float DeltaTime);
+	void PlayHitReactMontage();
 
 private:
 	/* Replication */
@@ -56,6 +60,8 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed(); // RPC's (remote procedure calls) functions for client to server (otherwise other way around)
+	
+
 
 	/* Components */
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -78,6 +84,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* FireWeaponMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* HitReactMontage;
+
 	float AO_Yaw;
 	float InterpAO_Yaw;
 	float AO_Pitch;
@@ -86,6 +95,9 @@ private:
 	ETurningInPlace TurningInPlace;
 
 	void TurnInPlace(float DeltaTime);
+	void HideCameraIfCharacterClose();
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f;
 
 public:
 	//getters and setters
