@@ -7,6 +7,8 @@
 #include "BlasterHUD.generated.h"
 
 class UTexture2D;
+class UCharacterOverlay;
+class UUserWidget;
 
 USTRUCT(BlueprintType)
 struct FHUDPackage
@@ -21,6 +23,7 @@ public:
 	UTexture2D* CrosshairsBottom;
 
 	float CrosshairSpread;
+	FLinearColor CrosshairsColour;
 };
 
 UCLASS()
@@ -30,11 +33,18 @@ class COSMICBLASTER_API ABlasterHUD : public AHUD
 	
 public:
 	virtual void DrawHUD() override;
+	UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
 
 private:
+	virtual void BeginPlay() override;
+	void AddCharacterOverlay();
+
 	FHUDPackage HUDPackage;
 
-	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCentre, FVector2D Spread);
+	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCentre, FVector2D Spread, FLinearColor CrosshairColour);
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;
