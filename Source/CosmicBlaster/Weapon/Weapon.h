@@ -10,6 +10,8 @@ class USphereComponent;
 class UWidgetComponent;
 class UAnimationAsset;
 class UTexture2D;
+class ACosmicBlasterCharacter;
+class ABlasterPlayerController;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -30,8 +32,11 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 
 	virtual void Fire(const FVector& HitTarget);
+	void Dropped();
+	void SetHUDAmmo();
 
 	/* HUD */
 	void ShowPickupWidget(bool bShowWidget);
@@ -69,6 +74,12 @@ protected:
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+	UPROPERTY()
+	ACosmicBlasterCharacter* BlasterOwnerCharacter;
+
+	UPROPERTY()
+	ABlasterPlayerController* BlasterOwnerController;
+
 	/* Components */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -99,6 +110,18 @@ private:
 	/* Animations */
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	UAnimationAsset* FireAnimation;
+
+	/* Ammo */
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
 
 public:
 	void SetWeaponState(EWeaponState State);

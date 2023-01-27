@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "CosmicBlaster/BlasterTypes/TurningInPlace.h"
 #include "CosmicBlaster/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Components/TimelineComponent.h"
 #include "CosmicBlasterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -14,6 +15,9 @@ class UWidgetComponent;
 class AWeapon;
 class UCombatComponent;
 class UAnimMontage;
+class ABlasterPlayerController;
+class USoundCue;
+class ABlasterPlayerState;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -22,6 +26,10 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 
 public:
 	ACosmicBlasterCharacter();
+
+	UPROPERTY()
+	ABlasterPlayerState* BlasterPlayerState;
+
 	/* Overrides */
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -30,15 +38,21 @@ public:
 
 	/*Montages*/
 	void PlayFireMontage(bool bAiming);
+	void PlayElimMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
+	/* Elimination */
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
+
+	void Elim();
+	virtual void Destroyed() override;
 
 protected:
 	virtual void BeginPlay() override;
+	void PollInit(); // poll for any relevant classes and initialize the HUD
 
 	 /* Inputs */
 	void MoveForward(float Value);
@@ -60,6 +74,12 @@ protected:
 
 	/* Montages */
 	void PlayHitReactMontage();
+
+	/* Damage / Health */
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
+
+	void UpdateHUDHealth();
 
 private:
 	/* Movement */
@@ -112,6 +132,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ElimMontage;
+
 	/* Aim Offset */
 	float AO_Yaw;
 	float InterpAO_Yaw;
@@ -119,6 +142,9 @@ private:
 	FRotator StartingAimRotation;
 
 	/* Health */
+	UPROPERTY()
+	ABlasterPlayerController* BlasterPlayerController;
+
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	float MaxHealth = 100.f;
 
@@ -127,6 +153,45 @@ private:
 
 	UFUNCTION()
 	void OnRep_Health();
+
+	bool bElimmed = false;
+
+	/* Elimination */
+	FTimerHandle ElimTimer;
+	void ElimTimerFinished();
+
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f;
+
+	/* Dissolve effect */
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+
+	void StartDissolve();
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	UPROPERTY(VisibleAnywhere, Category = Elimination)
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance; //instance to change at run time
+
+	UPROPERTY(EditAnywhere, Category = Elimination)
+	UMaterialInstance* DissolveMaterialInstance; //instance set on BP, used with dynamic mat instance
+
+	/* Elimination Bot */
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ElimBotEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* ElimBotComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ElimBotSound;
 
 public:
 	//getters and setters
@@ -140,4 +205,7 @@ public:
 	FVector GetHitTarget() const;
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsElimmed() const { return bElimmed; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };

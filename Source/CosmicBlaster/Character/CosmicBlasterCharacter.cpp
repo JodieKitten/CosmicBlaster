@@ -13,6 +13,13 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "CosmicBlasterAnimInstance.h"
 #include "CosmicBlaster/CosmicBlaster.h"
+#include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+#include "CosmicBlaster/GameMode/BlasterGameMode.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 
 /*
 Initial functions
@@ -51,17 +58,26 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 }
 
 void ACosmicBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UpdateHUDHealth();
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
+	}
 }
 
 void ACosmicBlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	HideCameraIfCharacterClose();
+	PollInit();
 
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
@@ -106,6 +122,19 @@ void ACosmicBlasterCharacter::PostInitializeComponents()
 	}
 }
 
+void ACosmicBlasterCharacter::PollInit()
+{
+	if (BlasterPlayerState == nullptr)
+	{
+		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+		if (BlasterPlayerState)
+		{
+			BlasterPlayerState->AddToScore(0.f); //not setting score/defeats to 0 - adding 0 to the HUD so it is correct on respawn/beginplay
+			BlasterPlayerState->AddToDefeats(0);
+		}
+	}
+}
+
 void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
 {
 	if (!IsLocallyControlled()) return;
@@ -127,7 +156,6 @@ void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
 		}
 	}
 }
-
 
 /*
 Replication functions
@@ -160,11 +188,6 @@ void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
 		Combat->EquipWeapon(OverlappingWeapon);
 	}
 } //for client use
-
-void ACosmicBlasterCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
 
 void ACosmicBlasterCharacter::OnRep_ReplicatedMovement()
 {
@@ -347,14 +370,9 @@ float ACosmicBlasterCharacter::CalculateSpeed()
 	return Velocity.Size();
 }
 
-
 /*
 Equip/Weapon functions
 */
-
-void ACosmicBlasterCharacter::OnRep_Health()
-{
-}
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -442,7 +460,6 @@ FVector ACosmicBlasterCharacter::GetHitTarget() const
 	return Combat->HitTarget;
 }
 
-
 /*
 Montage functions
 */
@@ -471,5 +488,149 @@ void ACosmicBlasterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ACosmicBlasterCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
+/*
+Damage / Health functions
+*/
+
+void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+	if (Health == 0.f)
+	{
+		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		if (BlasterGameMode)
+		{
+			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+			ABlasterPlayerController* AttackerController = Cast<ABlasterPlayerController>(InstigatorController);
+			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController, AttackerController);
+		}
+	}
+}
+
+void ACosmicBlasterCharacter::OnRep_Health()
+{
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+}
+
+void ACosmicBlasterCharacter::UpdateHUDHealth()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+/*
+Elimination / Dissolve effect
+*/
+
+void ACosmicBlasterCharacter::Elim()
+{
+	if (Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Dropped();
+	}
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
+}
+
+void ACosmicBlasterCharacter::Destroyed()
+{
+	Super::Destroyed();
+
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
+	}
+}
+
+void ACosmicBlasterCharacter::MulticastElim_Implementation()
+{
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
+	bElimmed = true;
+	PlayElimMontage();
+
+	//play dissolve material
+	if (DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), -0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 200.f);
+	}
+	StartDissolve();
+
+	//disable movement on elimination
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	if (BlasterPlayerController)
+	{
+		DisableInput(BlasterPlayerController);
+	}
+	// disable collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//Spawn elim bot
+	if (ElimBotEffect)
+	{
+		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
+		ElimBotComponent = UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			ElimBotEffect,
+			ElimBotSpawnPoint,
+			GetActorRotation()
+		);
+	}
+	if (ElimBotSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(this, ElimBotSound, GetActorLocation());
+	}
+}
+
+void ACosmicBlasterCharacter::ElimTimerFinished()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	if (BlasterGameMode)
+	{
+		BlasterGameMode->RequestRespawn(this, Controller);
+	}
+}
+
+void ACosmicBlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if (DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void ACosmicBlasterCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &ACosmicBlasterCharacter::UpdateDissolveMaterial);
+	if (DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
 	}
 }
