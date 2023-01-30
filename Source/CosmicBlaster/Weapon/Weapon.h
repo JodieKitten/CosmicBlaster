@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Weapon.generated.h"
 
 class USphereComponent;
@@ -64,6 +65,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	bool bAutomatic = true;
 
+	bool IsEmpty();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -74,6 +77,9 @@ protected:
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 	UPROPERTY()
 	ACosmicBlasterCharacter* BlasterOwnerCharacter;
 
@@ -129,4 +135,5 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 };

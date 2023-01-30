@@ -20,6 +20,7 @@
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
+#include "CosmicBlaster/Weapon/WeaponTypes.h"
 
 /*
 Initial functions
@@ -110,6 +111,7 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ACosmicBlasterCharacter::AimButtonReleased);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ACosmicBlasterCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ACosmicBlasterCharacter::FireButtonReleased);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ACosmicBlasterCharacter::ReloadButtonPressed);
 
 }
 
@@ -448,6 +450,18 @@ bool ACosmicBlasterCharacter::IsAiming()
 	return (Combat && Combat->bAiming);
 }
 
+void ACosmicBlasterCharacter::ReloadButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->Reload();
+	}
+}
+
+/*
+Getter functions
+*/
+
 AWeapon* ACosmicBlasterCharacter::GetEquippedWeapon()
 {
 	if(Combat == nullptr) return nullptr;
@@ -458,6 +472,12 @@ FVector ACosmicBlasterCharacter::GetHitTarget() const
 {
 	if(Combat == nullptr) return FVector();
 	return Combat->HitTarget;
+}
+
+ECombatState ACosmicBlasterCharacter::GetCombatState() const
+{
+	if (Combat == nullptr) return ECombatState::ECS_MAX;
+	return Combat->CombatState;
 }
 
 /*
@@ -497,6 +517,25 @@ void ACosmicBlasterCharacter::PlayElimMontage()
 	if (AnimInstance && ElimMontage)
 	{
 		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
+void ACosmicBlasterCharacter::PlayReloadMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		FName SectionName;
+		switch (Combat->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("Rifle");
+			break;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 

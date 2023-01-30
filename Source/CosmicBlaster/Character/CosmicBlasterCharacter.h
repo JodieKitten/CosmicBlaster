@@ -7,6 +7,7 @@
 #include "CosmicBlaster/BlasterTypes/TurningInPlace.h"
 #include "CosmicBlaster/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
+#include "CosmicBlaster/BlasterTypes/CombatState.h"
 #include "CosmicBlasterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -39,6 +40,7 @@ public:
 	/*Montages*/
 	void PlayFireMontage(bool bAiming);
 	void PlayElimMontage();
+	void PlayReloadMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -66,6 +68,7 @@ protected:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	virtual void Jump() override;
+	void ReloadButtonPressed();
 
 	/* Aim Offset */
 	void AimOffset(float DeltaTime);
@@ -109,7 +112,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* FollowCamera;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* Combat;
 
 	void HideCameraIfCharacterClose();
@@ -134,6 +137,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* ElimMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ReloadMontage;
 
 	/* Aim Offset */
 	float AO_Yaw;
@@ -208,4 +214,5 @@ public:
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	ECombatState GetCombatState() const;
 };
