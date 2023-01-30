@@ -63,6 +63,7 @@ protected:
 	void ServerReload();
 
 	void HandleReload();
+	int32 AmountToReload();
 
 	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
@@ -72,8 +73,6 @@ private:
 	ACosmicBlasterCharacter* Character;
 	ABlasterPlayerController* Controller;
 	ABlasterHUD* HUD;
-
-	
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -137,4 +136,6 @@ private:
 	int32 StartingARAmmo = 30;
 
 	void InitializeCarriedAmmo();
+
+	void UpdateAmmoValues();
 };

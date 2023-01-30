@@ -13,6 +13,7 @@ class UAnimationAsset;
 class UTexture2D;
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
+class USoundCue;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -38,6 +39,7 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void SetHUDAmmo();
+	void AddAmmo(int32 AmmoToAdd);
 
 	/* HUD */
 	void ShowPickupWidget(bool bShowWidget);
@@ -57,6 +59,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	UTexture2D* CrosshairsBottom;
+
+	/* Equip */
+	UPROPERTY(EditAnywhere)
+	USoundCue* EquipSound;
+
 
 	/* Automatic Fire */
 	UPROPERTY(EditAnywhere, Category = Combat)
@@ -136,4 +143,6 @@ public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetAmmo() const { return Ammo; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 };
