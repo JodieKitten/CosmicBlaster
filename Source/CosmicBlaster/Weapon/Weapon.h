@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Weapon.generated.h"
 
 class USphereComponent;
@@ -12,6 +13,7 @@ class UAnimationAsset;
 class UTexture2D;
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
+class USoundCue;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -37,6 +39,7 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void SetHUDAmmo();
+	void AddAmmo(int32 AmmoToAdd);
 
 	/* HUD */
 	void ShowPickupWidget(bool bShowWidget);
@@ -57,12 +60,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	UTexture2D* CrosshairsBottom;
 
+	/* Equip */
+	UPROPERTY(EditAnywhere)
+	USoundCue* EquipSound;
+
+
 	/* Automatic Fire */
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float FireDelay = 0.15f;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	bool bAutomatic = true;
+
+	bool IsEmpty();
 
 protected:
 	virtual void BeginPlay() override;
@@ -74,6 +84,9 @@ protected:
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 	UPROPERTY()
 	ACosmicBlasterCharacter* BlasterOwnerCharacter;
 
@@ -129,4 +142,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetAmmo() const { return Ammo; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 };

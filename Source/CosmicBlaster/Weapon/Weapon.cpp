@@ -213,13 +213,24 @@ void AWeapon::SetHUDAmmo()
 	}
 }
 
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	SetHUDAmmo();
+}
+
 void AWeapon::SpendRound()
 {
-	--Ammo;
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
 }
 
 void AWeapon::OnRep_Ammo()
 {
 	SetHUDAmmo();
+}
+
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0;
 }

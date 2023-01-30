@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "CosmicBlaster/HUD/BlasterHUD.h"
+#include "CosmicBlaster/Weapon/WeaponTypes.h"
+#include "CosmicBlaster/BlasterTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000.f
@@ -27,20 +29,26 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
+	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishedReloading();
 
 protected:
 	virtual void BeginPlay() override;	
 
+	/* Equipping */
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
+	/* Aiming */
 	void SetAiming(bool bIsAiming);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
 
+	/* Firing */
 	void FireButtonPressed(bool bPressed);
-
 	void Fire();
 
 	UFUNCTION(Server, Reliable)
@@ -49,6 +57,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
+	/* Reload */
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	void HandleReload();
+	int32 AmountToReload();
+
+	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 	void SetHUDCrosshairs(float DeltaTime);
 
@@ -56,6 +73,9 @@ private:
 	ACosmicBlasterCharacter* Character;
 	ABlasterPlayerController* Controller;
 	ABlasterHUD* HUD;
+
+	UPROPERTY(VisibleAnywhere)
+	EWeaponType WeaponType;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -66,6 +86,12 @@ private:
 
 	bool bFireButtonPressed;
 	FVector HitTarget;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
 
 	/* Walk speeds */
 	UPROPERTY(EditAnywhere)
@@ -97,4 +123,22 @@ private:
 	void StartFireTimer();
 	void FireTimerFinished();
 	bool bCanFire = true;
+
+	bool CanFire();
+
+	 /* Ammo */
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
+	int32 CarriedAmmo; //for currently equipped weapon
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	TMap<EWeaponType, int32> CarriedAmmoMap; //tmap cannot be replicated
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmo = 30;
+
+	void InitializeCarriedAmmo();
+
+	void UpdateAmmoValues();
 };
