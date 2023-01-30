@@ -74,6 +74,9 @@ private:
 	ABlasterPlayerController* Controller;
 	ABlasterHUD* HUD;
 
+	UPROPERTY(VisibleAnywhere)
+	EWeaponType WeaponType;
+
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 

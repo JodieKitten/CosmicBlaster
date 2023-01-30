@@ -7,6 +7,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
+#include "CosmicBlaster/Weapon/Weapon.h"
 
 
 void ABlasterPlayerController::BeginPlay()
@@ -82,6 +83,23 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
+void ABlasterPlayerController::SetHUDWeaponType(EWeaponType WeaponType)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->WeaponType;
+	if (bHUDValid)
+	{
+		FString EquippedWeaponType;
+		switch (WeaponType)
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			EquippedWeaponType = FString::Printf(TEXT("Assault Rifle"));
+			break;
+		}
+		BlasterHUD->CharacterOverlay->WeaponType->SetText(FText::FromString(EquippedWeaponType));
 	}
 }
 

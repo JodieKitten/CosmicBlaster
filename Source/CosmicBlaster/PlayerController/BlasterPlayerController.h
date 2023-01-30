@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "BlasterPlayerController.generated.h"
 
 class ABlasterHUD;
@@ -21,6 +22,7 @@ public:
 	void SetHUDDefeats(int32 Defeats);
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
+	void SetHUDWeaponType(EWeaponType WeaponType);
 
 protected:
 	virtual void BeginPlay() override;
