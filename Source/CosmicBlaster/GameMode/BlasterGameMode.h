@@ -9,6 +9,11 @@
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 
+namespace MatchState
+{
+	extern COSMICBLASTER_API const FName Cooldown; // match ended, display winner and start cooldown timer
+}
+
 UCLASS()
 class COSMICBLASTER_API ABlasterGameMode : public AGameMode
 {
@@ -25,6 +30,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	float MatchTime = 120.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float CooldownTime = 10.f;
 
 	float LevelStartingTime = 0.f;
 
