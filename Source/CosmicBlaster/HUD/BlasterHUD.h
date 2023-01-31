@@ -9,6 +9,7 @@
 class UTexture2D;
 class UCharacterOverlay;
 class UUserWidget;
+class UAnnouncement;
 
 USTRUCT(BlueprintType)
 struct FHUDPackage
@@ -33,15 +34,25 @@ class COSMICBLASTER_API ABlasterHUD : public AHUD
 	
 public:
 	virtual void DrawHUD() override;
+	void AddCharacterOverlay();
+	void AddAnnouncement();
+
+	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	TSubclassOf<UUserWidget> CharacterOverlayClass;
 
-private:
-	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
+	UPROPERTY()
+	UAnnouncement* Announcement;
 
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
 	FHUDPackage HUDPackage;
 
 	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCentre, FVector2D Spread, FLinearColor CrosshairColour);

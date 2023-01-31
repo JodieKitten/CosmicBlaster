@@ -590,24 +590,15 @@ void ACosmicBlasterCharacter::Elim()
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
 }
 
-void ACosmicBlasterCharacter::Destroyed()
-{
-	Super::Destroyed();
-
-	if (ElimBotComponent)
-	{
-		ElimBotComponent->DestroyComponent();
-	}
-}
-
 void ACosmicBlasterCharacter::MulticastElim_Implementation()
 {
+	bElimmed = true;
+	PlayElimMontage();
+
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
 	}
-	bElimmed = true;
-	PlayElimMontage();
 
 	//play dissolve material
 	if (DissolveMaterialInstance)
@@ -644,6 +635,16 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation()
 	if (ElimBotSound)
 	{
 		UGameplayStatics::SpawnSoundAtLocation(this, ElimBotSound, GetActorLocation());
+	}
+}
+
+void ACosmicBlasterCharacter::Destroyed()
+{
+	Super::Destroyed();
+
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
 	}
 }
 

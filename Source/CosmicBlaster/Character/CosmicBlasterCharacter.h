@@ -46,10 +46,11 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/* Elimination */
+	void Elim();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
 
-	void Elim();
 	virtual void Destroyed() override;
 
 protected:
