@@ -34,6 +34,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FinishedReloading();
 
+	void FireButtonPressed(bool bPressed);
+
 protected:
 	virtual void BeginPlay() override;	
 
@@ -48,7 +50,6 @@ protected:
 	void ServerSetAiming(bool bIsAiming);
 
 	/* Firing */
-	void FireButtonPressed(bool bPressed);
 	void Fire();
 
 	UFUNCTION(Server, Reliable)

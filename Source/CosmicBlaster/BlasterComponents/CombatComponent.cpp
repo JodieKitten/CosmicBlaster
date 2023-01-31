@@ -228,10 +228,14 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 
 	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
-	if (Controller && EquippedWeapon)
+	if (Controller)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
-		Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+		if (EquippedWeapon)
+		{
+			Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+		}
+		
 	}
 
 	if (EquippedWeapon->EquipSound)
@@ -250,10 +254,13 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::OnRep_EquippedWeapon()
 {
-	if (EquippedWeapon && Character && Controller)
+	if (EquippedWeapon && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-		Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+		if (Controller)
+		{
+			Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+		}
 
 		const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
 		if (HandSocket)

@@ -38,4 +38,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchCountdownText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ElimText;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* Blink;
 };
