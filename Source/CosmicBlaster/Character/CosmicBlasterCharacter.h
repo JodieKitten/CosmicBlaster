@@ -46,10 +46,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/* Elimination */
-	void Elim();
+	void Elim(APlayerController* AttackerController);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastElim();
+	void MulticastElim(const FString& AttackerName);
 
 	virtual void Destroyed() override;
 

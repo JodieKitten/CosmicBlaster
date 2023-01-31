@@ -72,6 +72,10 @@ void ACosmicBlasterCharacter::BeginPlay()
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
 	}
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->ClearElimText();
+	}
 }
 
 void ACosmicBlasterCharacter::Tick(float DeltaTime)
@@ -601,24 +605,41 @@ void ACosmicBlasterCharacter::UpdateHUDHealth()
 Elimination / Dissolve effect
 */
 
-void ACosmicBlasterCharacter::Elim()
+void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController)
 {
+	FString AttackerName = FString();
+	ABlasterPlayerController* AttackerBlasterController = Cast<ABlasterPlayerController>(AttackerController);
+	if (AttackerController)
+	{
+		ABlasterPlayerState* AttackerBlasterPlayerState = Cast<ABlasterPlayerState>(AttackerBlasterController->PlayerState);
+		if (AttackerBlasterPlayerState)
+		{
+			AttackerName = AttackerBlasterPlayerState->GetPlayerName();
+		}
+	}
+
 	if (Combat && Combat->EquippedWeapon)
 	{
 		Combat->EquippedWeapon->Dropped();
 	}
-	MulticastElim();
+	MulticastElim(AttackerName);
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
 }
 
-void ACosmicBlasterCharacter::MulticastElim_Implementation()
+void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& AttackerName)
 {
 	bElimmed = true;
+	if (Combat)
+	{
+		Combat->FireButtonPressed(false);
+	}
+
 	PlayElimMontage();
 
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
+		BlasterPlayerController->SetElimText(AttackerName);
 	}
 
 	//play dissolve material
@@ -663,7 +684,11 @@ void ACosmicBlasterCharacter::Destroyed()
 	{
 		ElimBotComponent->DestroyComponent();
 	}
-	if (Combat && Combat->EquippedWeapon)
+
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
+
+	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
 	{
 		Combat->EquippedWeapon->Destroy();
 	}
@@ -675,6 +700,10 @@ void ACosmicBlasterCharacter::ElimTimerFinished()
 	if (BlasterGameMode)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+		if (BlasterPlayerController)
+		{
+			BlasterPlayerController->ClearElimText();
+		}
 	}
 }
 

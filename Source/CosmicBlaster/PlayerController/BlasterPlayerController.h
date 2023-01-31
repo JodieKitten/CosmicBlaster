@@ -10,6 +10,7 @@
 class ABlasterHUD;
 class UCharacterOverlay;
 class ABlasterGameMode;
+class ABlasterPlayerState;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -29,6 +30,8 @@ public:
 	void SetHUDWeaponType(EWeaponType WeaponType);
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float CountdownTime);
+	void SetElimText(FString InText);
+	void ClearElimText();
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap

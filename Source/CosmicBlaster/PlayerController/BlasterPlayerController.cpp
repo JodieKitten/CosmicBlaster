@@ -13,6 +13,8 @@
 #include "CosmicBlaster/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
 #include "CosmicBlaster/BlasterComponents/CombatComponent.h"
+#include "CosmicBlaster/GameState/BlasterGameState.h"
+#include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 
 
 void ABlasterPlayerController::BeginPlay()
@@ -168,7 +170,36 @@ void ABlasterPlayerController::HandleCooldown()
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			FString AnnouncementText("New Match Starts In:");
 			BlasterHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			BlasterHUD->Announcement->InfoText->SetText(FText()); //creates empty text so is hidden
+
+			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+			ABlasterPlayerState* BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+			if (BlasterGameState && BlasterPlayerState)
+			{
+				TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;
+				FString InfoTextString;
+				if (TopPlayers.Num() == 0)
+				{
+					InfoTextString = FString("Nobody won this game...");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == BlasterPlayerState)
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+				else if (TopPlayers.Num() == 1)
+				{
+					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+				}
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Players tied for winner:\n");
+					for (auto TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+
+				BlasterHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
 		}
 	}
 
@@ -243,7 +274,6 @@ void ABlasterPlayerController::SetHUDTime()
 		{
 			SetHUDMatchCountdown(TimeLeft);
 		}
-
 	}
 	CountdownInt = SecondsLeft;
 }
@@ -356,6 +386,11 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
 
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds); // %02d = 2 digits
 		BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+
+		if (BlasterHUD->CharacterOverlay->Blink && Minutes == 0 && Seconds <= 30)
+		{
+			BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->Blink);
+		}
 	}
 }
 
@@ -376,5 +411,26 @@ void ABlasterPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds); // %02d = 2 digits
 		BlasterHUD->Announcement->WarmupTime->SetText(FText::FromString(CountdownText));
+	}
+}
+
+void ABlasterPlayerController::SetElimText(FString InText)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->ElimText;
+	if (bHUDValid)
+	{
+		FString TextToDisplay = FString::Printf(TEXT("You were eliminated by: %s"), *InText);
+		BlasterHUD->CharacterOverlay->ElimText->SetText(FText::FromString(TextToDisplay));
+	}
+}
+
+void ABlasterPlayerController::ClearElimText()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->ElimText;
+	if (bHUDValid)
+	{
+		BlasterHUD->CharacterOverlay->ElimText->SetText(FText());
 	}
 }
