@@ -12,6 +12,7 @@
 #include "CosmicBlaster/GameMode/BlasterGameMode.h"
 #include "CosmicBlaster/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
+#include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 
 
 void ABlasterPlayerController::BeginPlay()
@@ -169,6 +170,13 @@ void ABlasterPlayerController::HandleCooldown()
 			BlasterHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 			BlasterHUD->Announcement->InfoText->SetText(FText()); //creates empty text so is hidden
 		}
+	}
+
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	if (BlasterCharacter && BlasterCharacter->GetCombat())
+	{
+		BlasterCharacter->bDisableGameplay = true;
+		BlasterCharacter->GetCombat()->FireButtonPressed(false);
 	}
 }
 

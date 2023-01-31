@@ -79,7 +79,17 @@ void ACosmicBlasterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	HideCameraIfCharacterClose();
 	PollInit();
+	RotateInPlace(DeltaTime);
+}
 
+void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
@@ -169,6 +179,7 @@ void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 	DOREPLIFETIME_CONDITION(ACosmicBlasterCharacter, OverlappingWeapon, COND_OwnerOnly); //pickup widget only show to the owner of the character (not everyone on the server)
 	DOREPLIFETIME(ACosmicBlasterCharacter, Health);
+	DOREPLIFETIME(ACosmicBlasterCharacter, bDisableGameplay);
 }
 
 void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
@@ -205,6 +216,7 @@ Movement functions
 
 void ACosmicBlasterCharacter::MoveForward(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -215,6 +227,7 @@ void ACosmicBlasterCharacter::MoveForward(float Value)
 
 void ACosmicBlasterCharacter::MoveRight(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -235,6 +248,7 @@ void ACosmicBlasterCharacter::LookUp(float Value)
 
 void ACosmicBlasterCharacter::CrouchButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch(); //unreal pre-made function
@@ -248,6 +262,7 @@ void ACosmicBlasterCharacter::CrouchButtonPressed()
 
 void ACosmicBlasterCharacter::Jump()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -395,6 +410,7 @@ void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 
 void ACosmicBlasterCharacter::AimButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat && Combat->EquippedWeapon != nullptr)
 	{
 		Combat->SetAiming(true);
@@ -403,6 +419,7 @@ void ACosmicBlasterCharacter::AimButtonPressed()
 
 void ACosmicBlasterCharacter::AimButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->SetAiming(false);
@@ -411,6 +428,7 @@ void ACosmicBlasterCharacter::AimButtonReleased()
 
 void ACosmicBlasterCharacter::FireButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat && Combat->EquippedWeapon != nullptr)
 	{
 		Combat->FireButtonPressed(true);
@@ -419,6 +437,7 @@ void ACosmicBlasterCharacter::FireButtonPressed()
 
 void ACosmicBlasterCharacter::FireButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
@@ -427,6 +446,7 @@ void ACosmicBlasterCharacter::FireButtonReleased()
 
 void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		if (HasAuthority()) //server
@@ -452,6 +472,7 @@ bool ACosmicBlasterCharacter::IsAiming()
 
 void ACosmicBlasterCharacter::ReloadButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->Reload();
@@ -611,12 +632,8 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation()
 	StartDissolve();
 
 	//disable movement on elimination
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
-	if (BlasterPlayerController)
-	{
-		DisableInput(BlasterPlayerController);
-	}
+	bDisableGameplay = true;
+
 	// disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -645,6 +662,10 @@ void ACosmicBlasterCharacter::Destroyed()
 	if (ElimBotComponent)
 	{
 		ElimBotComponent->DestroyComponent();
+	}
+	if (Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Destroy();
 	}
 }
 
