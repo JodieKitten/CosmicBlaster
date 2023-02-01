@@ -11,8 +11,10 @@ UCLASS()
 class COSMICBLASTER_API AProjectileBullet : public AProjectile
 {
 	GENERATED_BODY()
-	
+
+public:
+	AProjectileBullet();
+
 protected:
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-
 };
