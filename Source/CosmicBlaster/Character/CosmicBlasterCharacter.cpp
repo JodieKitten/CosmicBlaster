@@ -629,6 +629,8 @@ void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController)
 void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& AttackerName)
 {
 	bElimmed = true;
+	GetCharacterMovement()->DisableMovement();
+
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
