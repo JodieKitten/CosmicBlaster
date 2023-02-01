@@ -7,6 +7,7 @@
 #include "HitScanWeapon.generated.h"
 
 class UParticleSystem;
+class USoundCue;
 
 UCLASS()
 class COSMICBLASTER_API AHitScanWeapon : public AWeapon
@@ -25,4 +26,13 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlash;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitSound;
 };
