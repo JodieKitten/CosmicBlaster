@@ -27,6 +27,8 @@ AProjectileRocket::AProjectileRocket()
 
 void AProjectileRocket::BeginPlay()
 {
+	Super::BeginPlay();
+
 	if (!HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectileRocket::OnHit);
