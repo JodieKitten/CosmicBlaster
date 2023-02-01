@@ -8,9 +8,9 @@
 
 AProjectileBullet::AProjectileBullet()
 {
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement"));
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;
-	ProjectileMovementComponent->SetIsReplicated(true);
+	MoveItComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("I like to move it move it"));
+	MoveItComponent->bRotationFollowsVelocity = true;
+	MoveItComponent->SetIsReplicated(true);
 }
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

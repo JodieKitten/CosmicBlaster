@@ -19,10 +19,16 @@ AProjectileRocket::AProjectileRocket()
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("Rocket Movement Component"));
 	RocketMovementComponent->bRotationFollowsVelocity = true;
 	RocketMovementComponent->SetIsReplicated(true);
+	RocketMovementComponent->InitialSpeed = 1500.f;
+	RocketMovementComponent->MaxSpeed = 1500.f;
+	RocketMovementComponent->ProjectileGravityScale = 0.2f;
+	RocketMovementComponent->bSweepCollision = true;
 }
 
 void AProjectileRocket::BeginPlay()
 {
+	Super::BeginPlay();
+
 	if (!HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectileRocket::OnHit);
