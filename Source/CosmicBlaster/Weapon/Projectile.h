@@ -44,7 +44,7 @@ protected:
 	UBoxComponent* CollisionBox;
 
 	UPROPERTY(VisibleAnywhere)
-	UProjectileMovementComponent* ProjectileMovementComponent;
+	UProjectileMovementComponent* MoveItComponent;
 
 private:
 
