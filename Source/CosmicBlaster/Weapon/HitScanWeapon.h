@@ -6,12 +6,23 @@
 #include "Weapon.h"
 #include "HitScanWeapon.generated.h"
 
-/**
- * 
- */
+class UParticleSystem;
+
 UCLASS()
 class COSMICBLASTER_API AHitScanWeapon : public AWeapon
 {
 	GENERATED_BODY()
-	
+
+public:
+	virtual void Fire(const FVector& HitTarget) override;
+
+private:
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* BeamParticles;
 };
