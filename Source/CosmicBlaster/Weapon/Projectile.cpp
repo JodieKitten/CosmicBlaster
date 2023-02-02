@@ -9,6 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
 #include "CosmicBlaster/CosmicBlaster.h"
+#include "NiagaraFunctionLibrary.h"
 
 AProjectile::AProjectile()
 {
@@ -46,6 +47,57 @@ void AProjectile::BeginPlay()
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
 	}
 
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+}
+
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectile::DestroyTimerFinished, DestroyTime);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, //world context object
+				Damage, // base damage
+				10.f, // min damage
+				GetActorLocation(), // origin of damage
+				DamageInnerRadius, //damage inner radius
+				DamageOuterRaduis, //damage outer radius
+				1.f, // damage falloff (linear)
+				UDamageType::StaticClass(), //damage type class
+				TArray<AActor*>(), // empty array for ignore actors
+				this, // damage causer
+				FiringController // damage causer
+			);
+		}
+	}
 }
 
 void AProjectile::Tick(float DeltaTime)
