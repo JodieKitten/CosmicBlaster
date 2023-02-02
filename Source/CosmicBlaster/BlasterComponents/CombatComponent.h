@@ -9,8 +9,6 @@
 #include "CosmicBlaster/BlasterTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000.f
-
 class AWeapon;
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
@@ -147,6 +145,15 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingSMGAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingShotgunAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingGrenadeLauncherAmmo = 0;
 
 	void InitializeCarriedAmmo();
 

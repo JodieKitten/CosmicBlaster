@@ -28,6 +28,9 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 public:
 	ACosmicBlasterCharacter();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);
+
 	UPROPERTY()
 	ABlasterPlayerState* BlasterPlayerState;
 

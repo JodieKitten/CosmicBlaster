@@ -12,9 +12,9 @@
 
 AProjectileRocket::AProjectileRocket()
 {
-	RocketMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rocket Mesh"));
-	RocketMesh->SetupAttachment(RootComponent);
-	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rocket Mesh"));
+	ProjectileMesh->SetupAttachment(RootComponent);
+	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("Rocket Movement Component"));
 	RocketMovementComponent->bRotationFollowsVelocity = true;
@@ -71,29 +71,10 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	{
 		return;
 	}
-	APawn* FiringPawn = GetInstigator();
-	if (FiringPawn && HasAuthority())
-	{
-		AController* FiringController = FiringPawn->GetController();
-		if (FiringController)
-		{
-			UGameplayStatics::ApplyRadialDamageWithFalloff(
-				this, //world context object
-				Damage, // base damage
-				10.f, // min damage
-				GetActorLocation(), // origin of damage
-				InnerRadius, //damage inner radius
-				OuterRaduis, //damage outer radius
-				1.f, // damage falloff (linear)
-				UDamageType::StaticClass(), //damage type class
-				TArray<AActor*>(), // empty array for ignore actors
-				this, // damage causer
-				FiringController // damage causer
-			);
-		}
-	}
 
-	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectileRocket::DestroyTimerFinished, DestroyTime);
+	ExplodeDamage();
+
+	StartDestroyTimer();
 
 	if (ImpactParticles)
 	{
@@ -103,9 +84,9 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 	}
-	if (RocketMesh)
+	if (ProjectileMesh)
 	{
-		RocketMesh->SetVisibility(false);
+		ProjectileMesh->SetVisibility(false);
 	}
 	if (CollisionBox)
 	{
@@ -119,11 +100,6 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	{
 		ProjectileLoopComponent->Stop();
 	}
-}
-
-void AProjectileRocket::DestroyTimerFinished()
-{
-	Destroy();
 }
 
 void AProjectileRocket::Destroyed()
