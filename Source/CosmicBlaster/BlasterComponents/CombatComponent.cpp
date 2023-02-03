@@ -71,6 +71,30 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, Grenades);
 }
 
+void UCombatComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Reloading:
+		HandleReload();
+		break;
+	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed)
+		{
+			Fire();
+		}
+		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlayThrowGrenadeMontage();
+			AttachActorToLeftHand(EquippedWeapon);
+			ShowAttachedGrenade(true);
+		}
+		break;
+	}
+}
+
 /*
 Crosshairs
 */
@@ -201,6 +225,32 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	{
 		Character->GetFollowCamera()->SetFieldOfView(CurrentFOV);
 	}
+}
+
+/*
+HUD
+*/
+
+void UCombatComponent::UpdateHUDGrenades()
+{
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDGrenades(Grenades);
+	}
+}
+
+void UCombatComponent::SetWeaponTypeOnHUD()
+{
+	if (Controller && EquippedWeapon)
+	{
+		Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+	}
+}
+
+void UCombatComponent::OnRep_Grenades()
+{
+	UpdateHUDGrenades();
 }
 
 /*
@@ -631,52 +681,20 @@ void UCombatComponent::FinishedReloading()
 	}
 }
 
-void UCombatComponent::OnRep_Grenades()
-{
-	UpdateHUDGrenades();
-}
-
-void UCombatComponent::OnRep_CombatState()
-{
-	switch (CombatState)
-	{
-	case ECombatState::ECS_Reloading:
-		HandleReload();
-		break;
-	case ECombatState::ECS_Unoccupied:
-		if (bFireButtonPressed)
-		{
-			Fire();
-		}
-		break;
-	case ECombatState::ECS_ThrowingGrenade:
-		if (Character && !Character->IsLocallyControlled())
-		{
-			Character->PlayThrowGrenadeMontage();
-			AttachActorToLeftHand(EquippedWeapon);
-			ShowAttachedGrenade(true);
-		}
-		break;
-	}
-}
 
 /*
-HUD
+Pickups
 */
 
-void UCombatComponent::UpdateHUDGrenades()
+void UCombatComponent::PickupAmmo(EWeaponType WeaponTypes, int32 AmmoAmount)
 {
-	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
-	if (Controller)
+	if (CarriedAmmoMap.Contains(WeaponTypes))
 	{
-		Controller->SetHUDGrenades(Grenades);
+		CarriedAmmoMap[WeaponTypes] = FMath::Clamp(CarriedAmmoMap[WeaponTypes] + AmmoAmount, 0, MaxCarriedAmmo);
+		UpdateCarriedAmmo();
 	}
-}
-
-void UCombatComponent::SetWeaponTypeOnHUD()
-{
-	if (Controller && EquippedWeapon)
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponTypes)
 	{
-		Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
+		Reload();
 	}
 }

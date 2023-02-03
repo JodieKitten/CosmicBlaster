@@ -48,6 +48,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+
 protected:
 	virtual void BeginPlay() override;	
 
@@ -103,9 +105,6 @@ private:
 	ACosmicBlasterCharacter* Character;
 	ABlasterPlayerController* Controller;
 	ABlasterHUD* HUD;
-
-	UPROPERTY(VisibleAnywhere)
-	EWeaponType WeaponType;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -164,6 +163,9 @@ private:
 	void OnRep_CarriedAmmo();
 
 	TMap<EWeaponType, int32> CarriedAmmoMap; //tmap cannot be replicated
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 500;
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
