@@ -34,12 +34,33 @@ public:
 
 	void FireButtonPressed(bool bPressed);
 
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+
 protected:
 	virtual void BeginPlay() override;	
 
 	/* Equipping */
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void PlayEquipWeaponSound();
 
 	/* Aiming */
 	void SetAiming(bool bIsAiming);
@@ -49,12 +70,21 @@ protected:
 
 	/* Firing */
 	void Fire();
+	void ShowAttachedGrenade(bool bShowGrenade);
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
 
 	/* Reload */
 
@@ -63,18 +93,21 @@ protected:
 
 	void HandleReload();
 	int32 AmountToReload();
+	void ReloadEmptyWeapon();
 
 	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 	void SetHUDCrosshairs(float DeltaTime);
+	void UpdateCarriedAmmo();
+	void SetWeaponTypeOnHUD();
 
 private:
+	UPROPERTY()
 	ACosmicBlasterCharacter* Character;
+	UPROPERTY()
 	ABlasterPlayerController* Controller;
+	UPROPERTY()
 	ABlasterHUD* HUD;
-
-	UPROPERTY(VisibleAnywhere)
-	EWeaponType WeaponType;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -135,6 +168,9 @@ private:
 	TMap<EWeaponType, int32> CarriedAmmoMap; //tmap cannot be replicated
 
 	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 500;
+
+	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
 
 	UPROPERTY(EditAnywhere)
@@ -155,7 +191,21 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeLauncherAmmo = 0;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
+	int32 Grenades = 4;
+
+	UFUNCTION()
+	void OnRep_Grenades();
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 4;
+
 	void InitializeCarriedAmmo();
 
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
+	void UpdateHUDGrenades();
+
+	public:
+		FORCEINLINE int32 GetGrenades() const { return Grenades; }
 };

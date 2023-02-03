@@ -21,6 +21,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
+#include "CosmicBlaster/BlasterComponents/BuffComponent.h"
 
 /*
 Initial functions
@@ -48,6 +49,9 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
 
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff Component"));
+	Buff->SetIsReplicated(true);
+
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -61,6 +65,10 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 	MinNetUpdateFrequency = 33.f;
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ACosmicBlasterCharacter::BeginPlay()
@@ -75,6 +83,10 @@ void ACosmicBlasterCharacter::BeginPlay()
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->ClearElimText();
+	}
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 
@@ -126,7 +138,7 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ACosmicBlasterCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ACosmicBlasterCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ACosmicBlasterCharacter::ReloadButtonPressed);
-
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ACosmicBlasterCharacter::GrenadeButtonPressed);
 }
 
 void ACosmicBlasterCharacter::PostInitializeComponents()
@@ -135,6 +147,10 @@ void ACosmicBlasterCharacter::PostInitializeComponents()
 	if (Combat)
 	{
 		Combat->Character = this;
+	}
+	if (Buff)
+	{
+		Buff->Character = this;
 	}
 }
 
@@ -483,6 +499,14 @@ void ACosmicBlasterCharacter::ReloadButtonPressed()
 	}
 }
 
+void ACosmicBlasterCharacter::GrenadeButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->ThrowGrenade();
+	}
+}
+
 /*
 Getter functions
 */
@@ -582,15 +606,27 @@ void ACosmicBlasterCharacter::PlayReloadMontage()
 	}
 }
 
+void ACosmicBlasterCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrowGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
 /*
 Damage / Health functions
 */
 
 void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
+	if (bElimmed) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	Combat->CombatState = ECombatState::ECS_Unoccupied;
 
 	if (Health == 0.f)
 	{

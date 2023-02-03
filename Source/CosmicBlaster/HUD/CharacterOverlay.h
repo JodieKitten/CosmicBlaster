@@ -42,6 +42,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ElimText;
 
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* GrenadesText;
+
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* Blink;
 };

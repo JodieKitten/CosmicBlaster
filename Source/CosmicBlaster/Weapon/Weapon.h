@@ -73,6 +73,11 @@ public:
 	bool bAutomatic = true;
 
 	bool IsEmpty();
+	bool IsFull();
+
+	/* Enable / disable custom depth - weapon outline colour */
+
+	void EnableCustomDepth(bool bEnable);
 
 protected:
 	virtual void BeginPlay() override;
