@@ -11,6 +11,7 @@
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+#include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 
 /*
 Initial functions
@@ -247,10 +248,20 @@ void AWeapon::SpendRound()
 
 void AWeapon::OnRep_Ammo()
 {
+	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
+	if (BlasterOwnerCharacter && BlasterOwnerCharacter->GetCombat() && IsFull())
+	{
+		BlasterOwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
 	SetHUDAmmo();
 }
 
 bool AWeapon::IsEmpty()
 {
 	return Ammo <= 0;
+}
+
+bool AWeapon::IsFull()
+{
+	return Ammo == MagCapacity;
 }

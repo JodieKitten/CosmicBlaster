@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "CosmicBlaster/Character/CosmicBlasterAnimInstance.h"
 
 void AShotgun::Fire(const FVector& HitTarget)
 {

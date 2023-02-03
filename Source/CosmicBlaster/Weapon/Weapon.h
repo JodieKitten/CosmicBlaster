@@ -73,6 +73,7 @@ public:
 	bool bAutomatic = true;
 
 	bool IsEmpty();
+	bool IsFull();
 
 protected:
 	virtual void BeginPlay() override;

@@ -34,6 +34,11 @@ public:
 
 	void FireButtonPressed(bool bPressed);
 
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
+
 protected:
 	virtual void BeginPlay() override;	
 
@@ -158,4 +163,5 @@ private:
 	void InitializeCarriedAmmo();
 
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
 };
