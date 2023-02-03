@@ -49,6 +49,13 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
+	void DropEquippedWeapon();
+
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+
+	void PlayEquipWeaponSound();
+
 	/* Aiming */
 	void SetAiming(bool bIsAiming);
 
@@ -76,10 +83,13 @@ protected:
 
 	void HandleReload();
 	int32 AmountToReload();
+	void ReloadEmptyWeapon();
 
 	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 	void SetHUDCrosshairs(float DeltaTime);
+	void UpdateCarriedAmmo();
+	void SetWeaponTypeOnHUD();
 
 private:
 	ACosmicBlasterCharacter* Character;
