@@ -21,6 +21,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
+#include "CosmicBlaster/BlasterComponents/BuffComponent.h"
 
 /*
 Initial functions
@@ -47,6 +48,9 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
+
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff Component"));
+	Buff->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -143,6 +147,10 @@ void ACosmicBlasterCharacter::PostInitializeComponents()
 	if (Combat)
 	{
 		Combat->Character = this;
+	}
+	if (Buff)
+	{
+		Buff->Character = this;
 	}
 }
 

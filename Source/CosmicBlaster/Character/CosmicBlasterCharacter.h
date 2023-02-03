@@ -19,6 +19,7 @@ class UAnimMontage;
 class ABlasterPlayerController;
 class USoundCue;
 class ABlasterPlayerState;
+class UBuffComponent;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -28,12 +29,12 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 public:
 	ACosmicBlasterCharacter();
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void ShowSniperScopeWidget(bool bShowScope);
-
 	UPROPERTY()
 	ABlasterPlayerState* BlasterPlayerState;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);
+	
 	/* Overrides */
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -51,11 +52,10 @@ public:
 
 	/* Elimination */
 	void Elim(APlayerController* AttackerController);
+	virtual void Destroyed() override;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim(const FString& AttackerName);
-
-	virtual void Destroyed() override;
 
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
@@ -89,10 +89,10 @@ protected:
 	void PlayHitReactMontage();
 
 	/* Damage / Health */
+	void UpdateHUDHealth();
+
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-
-	void UpdateHUDHealth();
 
 private:
 	/* Movement */
@@ -116,6 +116,8 @@ private:
 
 
 	/* Components */
+	void HideCameraIfCharacterClose();
+
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* SpringArm;
 
@@ -125,7 +127,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* Combat;
 
-	void HideCameraIfCharacterClose();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UBuffComponent* Buff;
 
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f;
@@ -173,9 +176,8 @@ private:
 	UFUNCTION()
 	void OnRep_Health();
 
-	bool bElimmed = false;
-
 	/* Elimination */
+	bool bElimmed = false;
 	FTimerHandle ElimTimer;
 	void ElimTimerFinished();
 
@@ -184,14 +186,13 @@ private:
 
 	/* Dissolve effect */
 	FOnTimelineFloat DissolveTrack;
+	void StartDissolve();
 
 	UPROPERTY(VisibleAnywhere)
 	UTimelineComponent* DissolveTimeline;
 
 	UFUNCTION()
 	void UpdateDissolveMaterial(float DissolveValue);
-
-	void StartDissolve();
 
 	UPROPERTY(EditAnywhere)
 	UCurveFloat* DissolveCurve;

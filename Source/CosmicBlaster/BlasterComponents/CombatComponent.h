@@ -102,8 +102,11 @@ protected:
 	void SetWeaponTypeOnHUD();
 
 private:
+	UPROPERTY()
 	ACosmicBlasterCharacter* Character;
+	UPROPERTY()
 	ABlasterPlayerController* Controller;
+	UPROPERTY()
 	ABlasterHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
