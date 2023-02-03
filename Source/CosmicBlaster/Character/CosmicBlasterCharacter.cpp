@@ -126,7 +126,7 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ACosmicBlasterCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ACosmicBlasterCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ACosmicBlasterCharacter::ReloadButtonPressed);
-
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ACosmicBlasterCharacter::GrenadeButtonPressed);
 }
 
 void ACosmicBlasterCharacter::PostInitializeComponents()
@@ -483,6 +483,14 @@ void ACosmicBlasterCharacter::ReloadButtonPressed()
 	}
 }
 
+void ACosmicBlasterCharacter::GrenadeButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->ThrowGrenade();
+	}
+}
+
 /*
 Getter functions
 */
@@ -579,6 +587,15 @@ void ACosmicBlasterCharacter::PlayReloadMontage()
 			break;
 		}
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ACosmicBlasterCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrowGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
 	}
 }
 

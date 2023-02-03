@@ -44,6 +44,7 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayElimMontage();
 	void PlayReloadMontage();
+	void PlayThrowGrenadeMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -76,6 +77,7 @@ protected:
 	void FireButtonReleased();
 	virtual void Jump() override;
 	void ReloadButtonPressed();
+	void GrenadeButtonPressed();
 
 	/* Aim Offset */
 	void AimOffset(float DeltaTime);
@@ -148,6 +150,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ThrowGrenadeMontage;
 
 	/* Aim Offset */
 	float AO_Yaw;
