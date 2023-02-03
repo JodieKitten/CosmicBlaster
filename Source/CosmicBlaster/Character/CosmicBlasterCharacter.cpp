@@ -61,6 +61,10 @@ ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 	MinNetUpdateFrequency = 33.f;
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ACosmicBlasterCharacter::BeginPlay()
@@ -75,6 +79,10 @@ void ACosmicBlasterCharacter::BeginPlay()
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->ClearElimText();
+	}
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 
@@ -605,9 +613,12 @@ Damage / Health functions
 
 void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
+	if (bElimmed) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	Combat->CombatState = ECombatState::ECS_Unoccupied;
 
 	if (Health == 0.f)
 	{
