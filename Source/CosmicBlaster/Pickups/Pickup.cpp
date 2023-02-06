@@ -6,6 +6,8 @@
 #include "Sound/SoundCue.h"
 #include "Components/SphereComponent.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 APickup::APickup()
@@ -30,6 +32,9 @@ APickup::APickup()
 	PickupMesh->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 	PickupMesh->SetRenderCustomDepth(true);
 	PickupMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_TAN);
+
+	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Pickup Effect Component"));
+	PickupEffectComponent->SetupAttachment(RootComponent);
 }
 
 void APickup::BeginPlay()
@@ -61,6 +66,11 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 void APickup::Destroyed()
 {
 	Super::Destroyed();
+
+	if (PickupEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, PickupEffect, GetActorLocation(), GetActorRotation());
+	}
 
 	if (PickupSound)
 	{
