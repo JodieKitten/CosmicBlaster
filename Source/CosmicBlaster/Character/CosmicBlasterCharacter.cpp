@@ -76,6 +76,8 @@ void ACosmicBlasterCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateHUDHealth();
+	UpdateHUDShield();
+
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
@@ -96,6 +98,16 @@ void ACosmicBlasterCharacter::Tick(float DeltaTime)
 	HideCameraIfCharacterClose();
 	PollInit();
 	RotateInPlace(DeltaTime);
+}
+
+void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ACosmicBlasterCharacter, OverlappingWeapon, COND_OwnerOnly); //pickup widget only show to the owner of the character (not everyone on the server)
+	DOREPLIFETIME(ACosmicBlasterCharacter, Health);
+	DOREPLIFETIME(ACosmicBlasterCharacter, bDisableGameplay);
+	DOREPLIFETIME(ACosmicBlasterCharacter, Shield);
 }
 
 void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
@@ -151,6 +163,8 @@ void ACosmicBlasterCharacter::PostInitializeComponents()
 	if (Buff)
 	{
 		Buff->Character = this;
+		Buff->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
+		Buff->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
 }
 
@@ -187,47 +201,6 @@ void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
-}
-
-/*
-Replication functions
-*/
-
-void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(ACosmicBlasterCharacter, OverlappingWeapon, COND_OwnerOnly); //pickup widget only show to the owner of the character (not everyone on the server)
-	DOREPLIFETIME(ACosmicBlasterCharacter, Health);
-	DOREPLIFETIME(ACosmicBlasterCharacter, bDisableGameplay);
-}
-
-void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
-{
-	if (OverlappingWeapon)
-	{
-		OverlappingWeapon->ShowPickupWidget(true);
-	}
-	if (LastWeapon)
-	{
-		LastWeapon->ShowPickupWidget(false);
-	}
-}
-
-void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
-{
-	if (Combat)
-	{
-		Combat->EquipWeapon(OverlappingWeapon);
-	}
-} //for client use
-
-void ACosmicBlasterCharacter::OnRep_ReplicatedMovement()
-{
-	Super::OnRep_ReplicatedMovement();
-
-	SimProxiesTurn();
-	TimeSinceLastMovementReplication = 0.f;
 }
 
 /*
@@ -350,6 +323,14 @@ void ACosmicBlasterCharacter::TurnInPlace(float DeltaTime)
 	}
 }
 
+void ACosmicBlasterCharacter::OnRep_ReplicatedMovement()
+{
+	Super::OnRep_ReplicatedMovement();
+
+	SimProxiesTurn();
+	TimeSinceLastMovementReplication = 0.f;
+}
+
 /*
 Aim Offset functions
 */
@@ -428,6 +409,18 @@ void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 	}
 }
 
+void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+	if (LastWeapon)
+	{
+		LastWeapon->ShowPickupWidget(false);
+	}
+}
+
 void ACosmicBlasterCharacter::AimButtonPressed()
 {
 	if (bDisableGameplay) return;
@@ -479,6 +472,14 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 		}
 	}
 }
+
+void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+} //for client use
 
 bool ACosmicBlasterCharacter::IsWeaponEquipped()
 {
@@ -622,8 +623,26 @@ Damage / Health functions
 void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	if (bElimmed) return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+
+	float DamageToHealth = Damage;
+	if (Shield > 0)
+	{
+		if (Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage, 0, MaxShield);
+			DamageToHealth = 0; //shield took all the damage
+		}
+		else
+		{
+			Shield = 0.f;
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0, Damage); //damage to health minus what shield absorped
+		}
+	}
+
+	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth);
+
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	PlayHitReactMontage();
 
 	Combat->CombatState = ECombatState::ECS_Unoccupied;
@@ -640,10 +659,22 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	}
 }
 
-void ACosmicBlasterCharacter::OnRep_Health()
+void ACosmicBlasterCharacter::UpdateHUDShield()
 {
-	UpdateHUDHealth();
-	PlayHitReactMontage();
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
+	}
+}
+
+void ACosmicBlasterCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();
+	if (Shield < LastShield)
+	{
+		PlayHitReactMontage();
+	}
 }
 
 void ACosmicBlasterCharacter::UpdateHUDHealth()
@@ -652,6 +683,15 @@ void ACosmicBlasterCharacter::UpdateHUDHealth()
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ACosmicBlasterCharacter::OnRep_Health(float LastHealth)
+{
+	UpdateHUDHealth();
+	if (Health < LastHealth)
+	{
+		PlayHitReactMontage();
 	}
 }
 
