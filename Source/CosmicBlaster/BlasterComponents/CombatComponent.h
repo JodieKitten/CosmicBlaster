@@ -27,6 +27,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
+	void SwapWeapons();
+	bool ShouldSwapWeapons();
 	void Reload();
 
 	UFUNCTION(BlueprintCallable)
@@ -49,18 +51,26 @@ public:
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+	void PickupGrenades(int32 Amount);
 
 protected:
 	virtual void BeginPlay() override;	
 
 	/* Equipping */
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
 
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
-	void PlayEquipWeaponSound();
+	void AttachActorToBackpack(AActor* ActorToAttach);
+	void PlayEquipWeaponSound(AWeapon* WeaponToEquip);
 
 	/* Aiming */
 	void SetAiming(bool bIsAiming);
@@ -109,8 +119,12 @@ private:
 	UPROPERTY()
 	ABlasterHUD* HUD;
 
+	 /* Weapons */
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon;
 
 	/* Aiming / Firing */
 	UPROPERTY(Replicated)

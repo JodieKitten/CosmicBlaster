@@ -65,6 +65,9 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
 				if (bInitializeScore) SetHUDScore(HUDScore);
 				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
+				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
+				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
+				if (bInitializeWeaponType) SetHUDWeaponType(HUDWeaponType);
 
 				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat())
@@ -370,6 +373,11 @@ void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
+	else
+	{
+		bInitializeWeaponAmmo = true;
+		HUDWeaponAmmo = Ammo;
+	}
 }
 
 void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
@@ -380,6 +388,11 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		BlasterHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+	else
+	{
+		bInitializeCarriedAmmo = true;
+		HUDCarriedAmmo = Ammo;
 	}
 }
 
@@ -395,8 +408,31 @@ void ABlasterPlayerController::SetHUDWeaponType(EWeaponType WeaponType)
 		case EWeaponType::EWT_AssaultRifle:
 			EquippedWeaponType = FString::Printf(TEXT("Assault Rifle"));
 			break;
+		case EWeaponType::EWT_GrenadeLauncher:
+			EquippedWeaponType = FString::Printf(TEXT("Grenaded Launcher"));
+			break;
+		case EWeaponType::EWT_Pistol:
+			EquippedWeaponType = FString::Printf(TEXT("Pistol"));
+			break;
+		case EWeaponType::EWT_RocketLauncher:
+			EquippedWeaponType = FString::Printf(TEXT("Rocket Launcher"));
+			break;
+		case EWeaponType::EWT_Shotgun:
+			EquippedWeaponType = FString::Printf(TEXT("Shotgun"));
+			break;
+		case EWeaponType::EWT_SniperRifle:
+			EquippedWeaponType = FString::Printf(TEXT("Sniper"));
+			break;
+		case EWeaponType::EWT_SubmachineGun:
+			EquippedWeaponType = FString::Printf(TEXT("Submachine Gun"));
+			break;
 		}
 		BlasterHUD->CharacterOverlay->WeaponType->SetText(FText::FromString(EquippedWeaponType));
+	}
+	else
+	{
+		bInitializeWeaponType = true;
+		HUDWeaponType = WeaponType;
 	}
 }
 
@@ -477,7 +513,6 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 	}
 	else
 	{
-
 		bInitializeGrenades = true;
 		HUDGrenades = Grenades;
 	}

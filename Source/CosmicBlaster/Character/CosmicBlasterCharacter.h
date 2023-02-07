@@ -28,6 +28,7 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 
 public:
 	ACosmicBlasterCharacter();
+	void SpawnDefaultWeapon();
 
 	UPROPERTY()
 	ABlasterPlayerState* BlasterPlayerState;
@@ -41,9 +42,10 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 
-	/* Damage / Health */
+	/* HUD */
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
+	void UpdateHUDAmmo();
 
 	/*Montages*/
 	void PlayFireMontage(bool bAiming);
@@ -67,6 +69,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void PollInit(); // poll for any relevant classes and initialize the HUD
+	void DropOrDestroyWeapon(AWeapon* Weapon);
+	void DropOrDestroyWeapons();
 
 	 /* Inputs */
 	void MoveForward(float Value);
@@ -107,14 +111,12 @@ private:
 	float ProxyYaw;
 	float TimeSinceLastMovementReplication;
 
-
 	/* Replication */
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed(); // RPC's (remote procedure calls) functions for client to server (otherwise other way around)
-
 
 	/* Components */
 	void HideCameraIfCharacterClose();
@@ -178,11 +180,11 @@ private:
 	void OnRep_Health(float LastHealth);
 
 	/* Shield */
-	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	UPROPERTY(VisibleAnywhere, Category = "Player Stats")
 	float MaxShield = 100.f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
-	float Shield = 100.f;
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, EditAnywhere, Category = "Player Stats")
+	float Shield = 50.f;
 
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
@@ -227,6 +229,10 @@ private:
 	/* Grenade */
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;
+
+	/* Default Weapon */
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 public:
 	//getters and setters
