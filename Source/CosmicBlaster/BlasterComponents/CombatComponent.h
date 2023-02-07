@@ -79,6 +79,7 @@ protected:
 
 	/* Firing */
 	void Fire();
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void ShowAttachedGrenade(bool bShowGrenade);
 
 	UFUNCTION(Server, Reliable)
