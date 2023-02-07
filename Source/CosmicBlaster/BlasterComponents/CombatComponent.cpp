@@ -765,15 +765,10 @@ void UCombatComponent::PickupAmmo(EWeaponType WeaponTypes, int32 AmmoAmount)
 	{
 		CarriedAmmoMap[WeaponTypes] = FMath::Clamp(CarriedAmmoMap[WeaponTypes] + AmmoAmount, 0, MaxCarriedAmmo);
 		UpdateCarriedAmmo();
+
 	}
 	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponTypes)
 	{
 		Reload();
 	}
-}
-
-void UCombatComponent::PickupGrenades(int32 Amount)
-{
-	Grenades = FMath::Clamp(Grenades + 1, 0, MaxGrenades);
-	UpdateHUDGrenades();
 }

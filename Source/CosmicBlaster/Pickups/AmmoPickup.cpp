@@ -16,7 +16,6 @@ void AAmmoPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		if (Combat)
 		{
 			Combat->PickupAmmo(WeaponType, AmmoAmount);
-			Combat->PickupGrenades(AmmoAmount);
 		}
 	}
 
