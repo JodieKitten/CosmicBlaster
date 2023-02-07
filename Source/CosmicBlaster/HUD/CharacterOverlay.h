@@ -8,6 +8,7 @@
 
 class UProgressBar;
 class UTextBlock;
+class UImage;
 
 UCLASS()
 class COSMICBLASTER_API UCharacterOverlay : public UUserWidget
@@ -53,4 +54,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ShieldText;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* HighPingImage;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* HighPingAnimation;
 };

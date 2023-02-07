@@ -75,6 +75,8 @@ void ACosmicBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SpawnDefaultWeapon();
+	UpdateHUDAmmo();
 	UpdateHUDHealth();
 	UpdateHUDShield();
 
@@ -392,6 +394,31 @@ float ACosmicBlasterCharacter::CalculateSpeed()
 Equip/Weapon functions
 */
 
+void ACosmicBlasterCharacter::UpdateHUDAmmo()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController && Combat && Combat->EquippedWeapon)
+	{
+		BlasterPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
+		BlasterPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
+	}
+}
+
+void ACosmicBlasterCharacter::SpawnDefaultWeapon()
+{
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
+	{
+		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true;
+		if (Combat)
+		{
+			Combat->EquipWeapon(StartingWeapon);
+		}
+	}
+}
+
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -462,24 +489,24 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
-		if (HasAuthority()) //server
-		{
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed(); //client
-		}
+		ServerEquipButtonPressed();
 	}
 }
 
-void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation()
+void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation() //for client use
 {
 	if (Combat)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		if (OverlappingWeapon)
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else if (Combat->ShouldSwapWeapons())
+		{
+			Combat->SwapWeapons();
+		}
 	}
-} //for client use
+} 
 
 bool ACosmicBlasterCharacter::IsWeaponEquipped()
 {
@@ -712,10 +739,7 @@ void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController)
 		}
 	}
 
-	if (Combat && Combat->EquippedWeapon)
-	{
-		Combat->EquippedWeapon->Dropped();
-	}
+	DropOrDestroyWeapons();
 	MulticastElim(AttackerName);
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
 }
@@ -778,6 +802,47 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 	}
 }
 
+void ACosmicBlasterCharacter::ElimTimerFinished()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	if (BlasterGameMode)
+	{
+		BlasterGameMode->RequestRespawn(this, Controller);
+		if (BlasterPlayerController)
+		{
+			BlasterPlayerController->ClearElimText();
+		}
+	}
+}
+
+void ACosmicBlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if (Weapon == nullptr) return;
+	if (Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->Dropped();
+	}
+}
+
+void ACosmicBlasterCharacter::DropOrDestroyWeapons()
+{
+	if (Combat)
+	{
+		if (Combat->EquippedWeapon)
+		{
+			DropOrDestroyWeapon(Combat->EquippedWeapon);
+		}
+		if (Combat->SecondaryWeapon)
+		{
+			DropOrDestroyWeapon(Combat->SecondaryWeapon);
+		}
+	}
+}
+
 void ACosmicBlasterCharacter::Destroyed()
 {
 	Super::Destroyed();
@@ -793,19 +858,6 @@ void ACosmicBlasterCharacter::Destroyed()
 	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
 	{
 		Combat->EquippedWeapon->Destroy();
-	}
-}
-
-void ACosmicBlasterCharacter::ElimTimerFinished()
-{
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-	if (BlasterGameMode)
-	{
-		BlasterGameMode->RequestRespawn(this, Controller);
-		if (BlasterPlayerController)
-		{
-			BlasterPlayerController->ClearElimText();
-		}
 	}
 }
 
