@@ -20,6 +20,8 @@ class ABlasterPlayerController;
 class USoundCue;
 class ABlasterPlayerState;
 class UBuffComponent;
+class UBoxComponent;
+class ULagCompensationComponent;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -29,6 +31,64 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 public:
 	ACosmicBlasterCharacter();
 	void SpawnDefaultWeapon();
+
+	/* hit boxes used for server side rewind */
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Pelvis;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Spine_02;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArm_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArm_R;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArm_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArm_R;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Hand_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Hand_R;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Backpack;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Blanket;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Thigh_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Thigh_R;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Calf_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Calf_R;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Foot_L;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Foot_R;
+
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitCollisionBoxes;
 
 	UPROPERTY()
 	ABlasterPlayerState* BlasterPlayerState;
@@ -132,6 +192,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UBuffComponent* Buff;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	ULagCompensationComponent* LagCompensation;
 
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f;
@@ -259,4 +322,5 @@ public:
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
+	bool IsLocallyReloading();
 };

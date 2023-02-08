@@ -25,6 +25,16 @@ enum class EWeaponState : uint8
 	EWS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScan UMETA(DisplayName = "Hit Scan Weapon"),
+	EFT_Projectile UMETA(DisplayName = "Projectile Weapon"),
+	EFT_Shotgun UMETA(DisplayName = "Shotgun Weapon"),
+
+	EFT_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 UCLASS()
 class COSMICBLASTER_API AWeapon : public AActor
 {
@@ -36,12 +46,20 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnRep_Owner() override;
 
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
+
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void SetHUDAmmo();
 	void AddAmmo(int32 AmmoToAdd);
 
 	bool bDestroyWeapon = false;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	bool bUseScatter = false;
+
+	FVector TraceEndWithScatter(const FVector& HitTarget);
 
 	/* HUD */
 	void ShowPickupWidget(bool bShowWidget);
@@ -93,6 +111,14 @@ protected:
 	virtual void OnWeaponStateSet();
 	virtual void OnEquipped();
 	virtual void OnDropped();
+
+	/* Trace end with scatter */
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.f;
+
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
@@ -135,16 +161,23 @@ private:
 	UAnimationAsset* FireAnimation;
 
 	/* Ammo */
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
-
-	UFUNCTION()
-	void OnRep_Ammo();
 
 	void SpendRound();
 
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
+
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;
+
+	// no. of unprocessed server requests for ammo
+	//incremeneted in spend round, decremented in updateammo
+	int32 Sequence = 0;
 
 public:
 	void SetWeaponState(EWeaponState State);
