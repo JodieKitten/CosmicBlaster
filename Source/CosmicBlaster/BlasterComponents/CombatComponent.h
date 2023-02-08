@@ -52,6 +52,8 @@ public:
 
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
+	bool bLocallyReloading = false;
+
 protected:
 	virtual void BeginPlay() override;	
 
@@ -79,7 +81,11 @@ protected:
 
 	/* Firing */
 	void Fire();
+	void FireProjectileWeapon();
+	void FireHitScanWeapon();
+	void FireShotgun();
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 	void ShowAttachedGrenade(bool bShowGrenade);
 
 	UFUNCTION(Server, Reliable)
@@ -87,6 +93,12 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 
 	void ThrowGrenade();
 
@@ -127,8 +139,13 @@ private:
 	AWeapon* SecondaryWeapon;
 
 	/* Aiming / Firing */
-	UPROPERTY(Replicated)
-	bool bAiming;
+	bool bAimButtonPressed = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Aiming)
+	bool bAiming = false;
+
+	UFUNCTION()
+	void OnRep_Aiming();
 
 	bool bFireButtonPressed;
 	FVector HitTarget;
