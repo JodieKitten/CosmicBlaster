@@ -7,6 +7,7 @@
 #include "LagCompensationComponent.generated.h"
 
 class ABlasterPlayerController;
+class ACosmicBlasterCharacter;
 
 USTRUCT(BlueprintType)
 struct FBoxInformation //information for the boxes themselves on the character
@@ -46,6 +47,7 @@ public:
 	ULagCompensationComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
+	void ServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
 protected:
 	virtual void BeginPlay() override;
