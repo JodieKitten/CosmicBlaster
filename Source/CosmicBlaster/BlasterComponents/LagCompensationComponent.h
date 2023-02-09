@@ -74,10 +74,15 @@ public:
 	ULagCompensationComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
+
 	FServerSideRewindResult ServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
-	
+	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
+
 	UFUNCTION(Server, Reliable)
 	void ServerScoreRequest(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* DamageCauser);
+
+	UFUNCTION(Server, Reliable)
+	void ShotgunServerScoreRequest(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 protected:
 	virtual void BeginPlay() override;
@@ -92,7 +97,6 @@ protected:
 	FFramePackage GetFrameToCheck(ACosmicBlasterCharacter* HitCharacter, float HitTime);
 
 	/* Shotgun */
-	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 	FShotgunServerSideRewindResult ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
 
 private:

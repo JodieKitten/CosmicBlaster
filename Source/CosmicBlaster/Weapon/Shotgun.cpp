@@ -9,6 +9,8 @@
 #include "Sound/SoundCue.h"
 #include "CosmicBlaster/Character/CosmicBlasterAnimInstance.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+#include "CosmicBlaster/BlasterComponents/LagCompensationComponent.h"
 
 void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 {
@@ -54,11 +56,33 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 				}
 			}
 		}
+
+		TArray<ACosmicBlasterCharacter*> HitCharacters;
+
 		for (auto HitPair : HitMap) //loop through every pair in the Tmap (hit pair is who was hit and how many times)
 		{
-			if (HitPair.Key && HasAuthority() && InstigatorController)
+			if (HitPair.Key && InstigatorController)
 			{
-				UGameplayStatics::ApplyDamage(HitPair.Key, Damage * HitPair.Value, InstigatorController, this, UDamageType::StaticClass());
+				if (HasAuthority() && !bUseServerSideRewind)
+				{
+					UGameplayStatics::ApplyDamage(HitPair.Key, Damage * HitPair.Value, InstigatorController, this, UDamageType::StaticClass());
+				}
+
+				HitCharacters.Add(HitPair.Key);
+			}
+		}
+		if (!HasAuthority() && bUseServerSideRewind)
+		{
+			BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(OwnerPawn) : BlasterOwnerCharacter;
+			BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(InstigatorController) : BlasterOwnerController;
+			if (BlasterOwnerController && BlasterOwnerCharacter && BlasterOwnerCharacter->GetLagCompensation() && BlasterOwnerCharacter->IsLocallyControlled())
+			{
+				BlasterOwnerCharacter->GetLagCompensation()->ShotgunServerScoreRequest(
+					HitCharacters,
+					Start,
+					HitTargets,
+					BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime
+				);
 			}
 		}
 	}

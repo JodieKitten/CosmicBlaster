@@ -107,7 +107,6 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(ACosmicBlasterCharacter
 
 	//frame package that we check to verify a hit
 	FFramePackage FrameToCheck;
-
 	bool bShouldInterpolate = true; //more than likely need to interp to the hit time from older/younger
 
 	//hit character history
@@ -153,7 +152,7 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(ACosmicBlasterCharacter
 		//interp between younger and older to get hit time
 		FrameToCheck = InterpBetweenFrames(Older->GetValue(), Younger->GetValue(), HitTime);
 	}
-
+	FrameToCheck.Character = HitCharacter;
 	return FrameToCheck;
 }
 
@@ -404,5 +403,28 @@ void ULagCompensationComponent::ServerScoreRequest_Implementation(ACosmicBlaster
 	if (Character && HitCharacter && DamageCauser && Confirm.bHitConfirmed)
 	{
 		UGameplayStatics::ApplyDamage(HitCharacter, DamageCauser->GetDamage(), Character->Controller, DamageCauser, UDamageType::StaticClass());
+	}
+}
+
+void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
+{
+	FShotgunServerSideRewindResult Confirm = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
+
+	for (auto& HitCharacter : HitCharacters)
+	{
+		if (HitCharacter == nullptr || HitCharacter->GetEquippedWeapon() == nullptr || Character == nullptr) continue; //skips to next iteration of the FOR loop
+		float TotalDamage =0.f;
+		if (Confirm.HeadShots.Contains(HitCharacter))
+		{
+			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
+			TotalDamage += HeadShotDamage;
+
+		}
+		if (Confirm.BodyShots.Contains(HitCharacter))
+		{
+			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
+			TotalDamage += BodyShotDamage;
+		}
+		UGameplayStatics::ApplyDamage(HitCharacter, TotalDamage, Character->Controller, HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
 	}
 }
