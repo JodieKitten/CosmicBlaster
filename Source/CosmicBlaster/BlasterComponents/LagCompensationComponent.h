@@ -35,6 +35,9 @@ struct FFramePackage //packages full of the information for the boxes on charact
 
 	UPROPERTY()
 	TMap<FName, FBoxInformation> HitBoxInfo;
+
+	UPROPERTY()
+	ACosmicBlasterCharacter* Character;
 };
 
 USTRUCT(BlueprintType)
@@ -49,6 +52,17 @@ struct FServerSideRewindResult
 	bool bHeadShot;
 };
 
+USTRUCT(BlueprintType)
+struct FShotgunServerSideRewindResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<ACosmicBlasterCharacter*, uint32> HeadShots;
+	UPROPERTY()
+	TMap<ACosmicBlasterCharacter*, uint32> BodyShots;
+
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class COSMICBLASTER_API ULagCompensationComponent : public UActorComponent
@@ -75,6 +89,11 @@ protected:
 	void MoveBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void ResetHitBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void EnableCharacterMeshCollision(ACosmicBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
+	FFramePackage GetFrameToCheck(ACosmicBlasterCharacter* HitCharacter, float HitTime);
+
+	/* Shotgun */
+	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
+	FShotgunServerSideRewindResult ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
 
 private:
 	UPROPERTY()
