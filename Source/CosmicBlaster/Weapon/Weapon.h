@@ -84,7 +84,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	USoundCue* EquipSound;
 
-
 	/* Automatic Fire */
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float FireDelay = 0.15f;
@@ -101,6 +100,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY()
+	ACosmicBlasterCharacter* BlasterOwnerCharacter;
+
+	UPROPERTY()
+	ABlasterPlayerController* BlasterOwnerController;
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -119,15 +124,15 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	float SphereRadius = 75.f;
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind = false;
+
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
-
-	UPROPERTY()
-	ACosmicBlasterCharacter* BlasterOwnerCharacter;
-
-	UPROPERTY()
-	ABlasterPlayerController* BlasterOwnerController;
 
 	/* Components */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -188,4 +193,5 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 	FORCEINLINE int32 GetAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
+	FORCEINLINE float GetDamage() const { return Damage; }
 };
