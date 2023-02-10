@@ -511,6 +511,7 @@ void ACosmicBlasterCharacter::SpawnDefaultWeapon()
 		if (Combat)
 		{
 			Combat->EquipWeapon(StartingWeapon);
+			StartingWeapon->SetOwner(this);
 		}
 	}
 }
