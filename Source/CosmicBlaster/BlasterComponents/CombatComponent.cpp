@@ -288,16 +288,15 @@ void UCombatComponent::SwapWeapons()
 	SecondaryWeapon = TempWeapon;
 	//
 
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToBackpack(SecondaryWeapon);
+
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetHUDAmmo();
 	UpdateCarriedAmmo();
 	PlayEquipWeaponSound(EquippedWeapon);
 	SetWeaponTypeOnHUD();
-
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	AttachActorToBackpack(SecondaryWeapon);
-
 }
 
 bool UCombatComponent::ShouldSwapWeapons()
@@ -308,12 +307,13 @@ bool UCombatComponent::ShouldSwapWeapons()
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 {
 	if (WeaponToEquip == nullptr) return;
+
 	DropEquippedWeapon();
 	SetWeaponTypeOnHUD();
 	EquippedWeapon = WeaponToEquip;
+	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
-	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHUDAmmo();
 	UpdateCarriedAmmo();
 	PlayEquipWeaponSound(WeaponToEquip);
@@ -323,10 +323,11 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 {
 	if (WeaponToEquip == nullptr) return;
+
 	SecondaryWeapon = WeaponToEquip;
+	SecondaryWeapon->SetOwner(Character);
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToBackpack(WeaponToEquip);
-	SecondaryWeapon->SetOwner(Character);
 	PlayEquipWeaponSound(WeaponToEquip);
 }
 

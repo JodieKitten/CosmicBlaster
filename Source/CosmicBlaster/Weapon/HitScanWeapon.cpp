@@ -32,7 +32,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 		if (BlasterCharacter && InstigatorController)
 		{
-			if (HasAuthority() && !bUseServerSideRewind) //server calls apply damage
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if (HasAuthority() && bCauseAuthDamage) //server calls apply damage
 			{
 				UGameplayStatics::ApplyDamage(BlasterCharacter, Damage, InstigatorController, this, UDamageType::StaticClass());
 			}

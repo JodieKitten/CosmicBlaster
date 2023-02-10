@@ -7,6 +7,8 @@
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "BlasterPlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
+
 class ABlasterHUD;
 class UCharacterOverlay;
 class ABlasterGameMode;
@@ -18,6 +20,7 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	FHighPingDelegate HighPingDelegate;
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -126,6 +129,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float CheckPingFrequency = 20.f;
+
+	UFUNCTION(Server, Reliable)
+	void ServerReportPingStatus(bool bHighPing);
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;

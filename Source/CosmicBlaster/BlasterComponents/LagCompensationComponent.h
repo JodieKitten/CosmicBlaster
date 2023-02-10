@@ -70,12 +70,15 @@ class COSMICBLASTER_API ULagCompensationComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	friend class ACosmicBlasterCharacter;
 	ULagCompensationComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	friend class ACosmicBlasterCharacter;
+
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
 
 	FServerSideRewindResult ServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	FServerSideRewindResult ProjectileServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 	UFUNCTION(Server, Reliable)
@@ -84,19 +87,26 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ShotgunServerScoreRequest(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerScoreRequest(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
+
 protected:
 	virtual void BeginPlay() override;
+
 	void SaveFramePackage();
 	void SaveFramePackage(FFramePackage& Package);
+	FFramePackage GetFrameToCheck(ACosmicBlasterCharacter* HitCharacter, float HitTime);
+
+	void EnableCharacterMeshCollision(ACosmicBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
+
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
-	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+
 	void CacheBoxPosition(ACosmicBlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
 	void MoveBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void ResetHitBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
-	void EnableCharacterMeshCollision(ACosmicBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
-	FFramePackage GetFrameToCheck(ACosmicBlasterCharacter* HitCharacter, float HitTime);
 
-	/* Shotgun */
+	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+	FServerSideRewindResult ProjectileConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 	FShotgunServerSideRewindResult ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
 
 private:

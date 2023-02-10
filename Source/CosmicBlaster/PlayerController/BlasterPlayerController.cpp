@@ -38,16 +38,25 @@ void ABlasterPlayerController::Tick(float DeltaTime)
 
 void ABlasterPlayerController::CheckPing(float DeltaTime)
 {
+	if (HasAuthority()) return;
+
 	HighPingRunningTime += DeltaTime;
+
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Ping: %d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
+			}
+			else
+			{
+				ServerReportPingStatus(false);
 			}
 		}
 		HighPingRunningTime = 0.f;
@@ -65,6 +74,12 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	//Is the ping too high?
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -138,8 +153,6 @@ void ABlasterPlayerController::StopHighPingWarning()
 		}
 	}
 }
-
-
 
 /*
 Time sync 
