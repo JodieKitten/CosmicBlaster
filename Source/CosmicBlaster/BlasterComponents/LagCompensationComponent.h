@@ -76,6 +76,7 @@ public:
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
 
 	FServerSideRewindResult ServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	FServerSideRewindResult ProjectileServerSideRewind(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 	UFUNCTION(Server, Reliable)
@@ -89,14 +90,14 @@ protected:
 	void SaveFramePackage();
 	void SaveFramePackage(FFramePackage& Package);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
-	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
 	void CacheBoxPosition(ACosmicBlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
 	void MoveBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void ResetHitBoxes(ACosmicBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void EnableCharacterMeshCollision(ACosmicBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
 	FFramePackage GetFrameToCheck(ACosmicBlasterCharacter* HitCharacter, float HitTime);
 
-	/* Shotgun */
+	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+	FServerSideRewindResult ProjectileConfirmHit(const FFramePackage& Package, ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 	FShotgunServerSideRewindResult ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
 
 private:
