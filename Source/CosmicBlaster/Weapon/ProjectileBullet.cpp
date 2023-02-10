@@ -3,8 +3,10 @@
 
 #include "ProjectileBullet.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/Character.h"
+#include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+#include "CosmicBlaster/BlasterComponents/LagCompensationComponent.h"
 
 AProjectileBullet::AProjectileBullet()
 {
@@ -37,34 +39,32 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& Event)
 void AProjectileBullet::BeginPlay()
 {
 	Super::BeginPlay();
-	/*
-	FPredictProjectilePathParams PathParams;
-	PathParams.bTraceWithChannel = true;
-	PathParams.bTraceWithCollision = true;
-	PathParams.DrawDebugTime = 5.f;
-	PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
-	PathParams.LaunchVelocity = GetActorForwardVector() * InitialSpeed;
-	PathParams.MaxSimTime = 4.f;
-	PathParams.ProjectileRadius = 5.f;
-	PathParams.SimFrequency = 30.f;
-	PathParams.StartLocation = GetActorLocation();
-	PathParams.TraceChannel = ECollisionChannel::ECC_Visibility;
-	PathParams.ActorsToIgnore.Add(this);
-
-	FPredictProjectilePathResult PathResult;
-
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);*/
 }
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
+	ACosmicBlasterCharacter* OwnerCharacter = Cast<ACosmicBlasterCharacter>(GetOwner());
 	if (OwnerCharacter)
 	{
-		AController* OwnerController = OwnerCharacter->Controller;
+		ABlasterPlayerController* OwnerController = Cast<ABlasterPlayerController>(OwnerCharacter->Controller);
 		if (OwnerController)
 		{
-			UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+			if (OwnerCharacter->HasAuthority() && !bUseServerSideRewind) //server, no SSR
+			{
+				UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+				Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+				return;
+			}
+			ACosmicBlasterCharacter* HitCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
+			if (bUseServerSideRewind && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
+			{
+				OwnerCharacter->GetLagCompensation()->ProjectileServerScoreRequest(
+					HitCharacter,
+					TraceStart,
+					InitialVelocity,
+					OwnerController->GetServerTime() - OwnerController->SingleTripTime
+				);
+			}	
 		}
 	}
 

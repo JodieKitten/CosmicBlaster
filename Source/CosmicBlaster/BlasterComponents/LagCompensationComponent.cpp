@@ -534,6 +534,16 @@ void ULagCompensationComponent::ServerScoreRequest_Implementation(ACosmicBlaster
 	}
 }
 
+void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
+
+	if (Character && HitCharacter && Confirm.bHitConfirmed)
+	{
+		UGameplayStatics::ApplyDamage(HitCharacter, Character->GetEquippedWeapon()->GetDamage(), Character->Controller, Character->GetEquippedWeapon(), UDamageType::StaticClass());
+	}
+}
+
 void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
 	FShotgunServerSideRewindResult Confirm = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
