@@ -35,6 +35,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SpawnTracer();
 	void SpawnTrailSystem();
 	void StartDestroyTimer();
 	void DestroyTimerFinished();
@@ -74,7 +75,6 @@ protected:
 	float DamageOuterRaduis = 500.f;
 
 private:
-
 	UPROPERTY()
 	UParticleSystemComponent* TracerComponent;
 

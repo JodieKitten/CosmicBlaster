@@ -24,6 +24,9 @@
 #include "CosmicBlaster/BlasterComponents/BuffComponent.h"
 #include "Components/BoxComponent.h"
 #include "CosmicBlaster/BlasterComponents/LagCompensationComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+#include "CosmicBlaster/GameState/BlasterGameState.h"
 
 /*
 Initial functions
@@ -170,7 +173,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
-		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
+		OnTakeAnyDamage.AddDynamic(this, &ACosmicBlasterCharacter::ReceiveDamage);
 	}
 	if (BlasterPlayerController)
 	{
@@ -275,6 +278,12 @@ void ACosmicBlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f); //not setting score/defeats to 0 - adding 0 to the HUD so it is correct on respawn/beginplay
 			BlasterPlayerState->AddToDefeats(0);
+
+			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
+			{
+				MulticastGainedTheLead();
+			}
 		}
 	}
 }
@@ -490,16 +499,6 @@ float ACosmicBlasterCharacter::CalculateSpeed()
 Equip/Weapon functions
 */
 
-void ACosmicBlasterCharacter::UpdateHUDAmmo()
-{
-	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
-	if (BlasterPlayerController && Combat && Combat->EquippedWeapon)
-	{
-		BlasterPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
-		BlasterPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
-	}
-}
-
 void ACosmicBlasterCharacter::SpawnDefaultWeapon()
 {
 	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
@@ -513,6 +512,16 @@ void ACosmicBlasterCharacter::SpawnDefaultWeapon()
 			Combat->EquipWeapon(StartingWeapon);
 			StartingWeapon->SetOwner(this);
 		}
+	}
+}
+
+void ACosmicBlasterCharacter::UpdateHUDAmmo()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController && Combat && Combat->EquippedWeapon)
+	{
+		BlasterPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
+		BlasterPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
 	}
 }
 
@@ -586,7 +595,19 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
-		ServerEquipButtonPressed();
+		if (Combat->CombatState == ECombatState::ECS_Unoccupied)
+		{
+			ServerEquipButtonPressed();
+		}
+
+		bool bSwap = Combat->ShouldSwapWeapons() && !HasAuthority() && Combat->CombatState == ECombatState::ECS_Unoccupied && OverlappingWeapon == nullptr;
+		if (bSwap)
+		{
+			Combat->SwapWeapons();
+			PlaySwapMontage();
+			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
+			bFinishedSwapping = false;
+		}
 	}
 }
 
@@ -746,6 +767,15 @@ void ACosmicBlasterCharacter::PlayThrowGrenadeMontage()
 	}
 }
 
+void ACosmicBlasterCharacter::PlaySwapMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && SwapMontage)
+	{
+		AnimInstance->Montage_Play(SwapMontage);
+	}
+}
+
 /*
 Damage / Health functions
 */
@@ -773,9 +803,19 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 
 	UpdateHUDHealth();
 	UpdateHUDShield();
-	PlayHitReactMontage();
 
-	Combat->CombatState = ECombatState::ECS_Unoccupied;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
+	{
+		Combat->FinishedReloading();
+		PlayHitReactMontage();
+	}
+	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
+	{
+		Combat->FinishedSwap();
+		PlayHitReactMontage();
+	}
+
 
 	if (Health == 0.f)
 	{
@@ -829,7 +869,7 @@ void ACosmicBlasterCharacter::OnRep_Health(float LastHealth)
 Elimination / Dissolve effect
 */
 
-void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController)
+void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController, bool bPlayerLeftGame)
 {
 	FString AttackerName = FString();
 	ABlasterPlayerController* AttackerBlasterController = Cast<ABlasterPlayerController>(AttackerController);
@@ -843,12 +883,12 @@ void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController)
 	}
 
 	DropOrDestroyWeapons();
-	MulticastElim(AttackerName);
-	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
+	MulticastElim(AttackerName, bPlayerLeftGame);
 }
 
-void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& AttackerName)
+void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& AttackerName, bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	bElimmed = true;
 	GetCharacterMovement()->DisableMovement();
 
@@ -862,7 +902,11 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
-		BlasterPlayerController->SetElimText(AttackerName);
+		if (!bPlayerLeftGame)
+		{
+			BlasterPlayerController->SetElimText(AttackerName);
+		}
+
 	}
 
 	//play dissolve material
@@ -903,18 +947,28 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 	{
 		ShowSniperScopeWidget(false);
 	}
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
+
 }
 
 void ACosmicBlasterCharacter::ElimTimerFinished()
 {
 	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-	if (BlasterGameMode)
+	if (BlasterGameMode && !bLeftGame)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
 		if (BlasterPlayerController)
 		{
 			BlasterPlayerController->ClearElimText();
 		}
+	}
+	if (bLeftGame && IsLocallyControlled())
+	{
+		OnLeftGame.Broadcast();
 	}
 }
 
@@ -979,5 +1033,52 @@ void ACosmicBlasterCharacter::StartDissolve()
 	{
 		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
 		DissolveTimeline->Play();
+	}
+}
+
+/*
+Wining / Crown
+*/
+
+void ACosmicBlasterCharacter::MulticastGainedTheLead_Implementation()
+{
+	if (CrownSystem == nullptr) return;
+	if (CrownComponent == nullptr)
+	{
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			CrownSystem,
+			GetCapsuleComponent(),
+			FName(),
+			GetActorLocation() + FVector(0.f, 0.f, 110.f),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+	if (CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void ACosmicBlasterCharacter::MulticastLostTheLead_Implementation()
+{
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+}
+
+/*
+Leave game
+*/
+
+void ACosmicBlasterCharacter::ServerLeaveGame_Implementation()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterGameMode && BlasterPlayerState)
+	{
+		BlasterGameMode->PlayerLeftGame(BlasterPlayerState);
 	}
 }

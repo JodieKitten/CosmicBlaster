@@ -10,6 +10,8 @@
 #include "CosmicBlaster/BlasterTypes/CombatState.h"
 #include "CosmicBlasterCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
+
 class USpringArmComponent;
 class UCameraComponent;
 class UWidgetComponent;
@@ -22,6 +24,8 @@ class ABlasterPlayerState;
 class UBuffComponent;
 class UBoxComponent;
 class ULagCompensationComponent;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -31,6 +35,7 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 public:
 	ACosmicBlasterCharacter();
 	void SpawnDefaultWeapon();
+	bool bFinishedSwapping = false;
 
 	/* hit boxes used for server side rewind */
 	UPROPERTY(EditAnywhere)
@@ -112,19 +117,32 @@ public:
 	void PlayElimMontage();
 	void PlayReloadMontage();
 	void PlayThrowGrenadeMontage();
+	void PlaySwapMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/* Elimination */
-	void Elim(APlayerController* AttackerController);
 	virtual void Destroyed() override;
 
+	void Elim(APlayerController* AttackerController, bool bPlayerLeftGame);
+
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastElim(const FString& AttackerName);
+	void MulticastElim(const FString& AttackerName, bool bPlayerLeftGame);
+
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
+	FOnLeftGame OnLeftGame;
 
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGainedTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLostTheLead();
 
 protected:
 	virtual void BeginPlay() override;
@@ -223,6 +241,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* ThrowGrenadeMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* SwapMontage;
+
 	/* Aim Offset */
 	float AO_Yaw;
 	float InterpAO_Yaw;
@@ -260,6 +281,8 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f;
 
+	bool bLeftGame = false;
+
 	/* Dissolve effect */
 	FOnTimelineFloat DissolveTrack;
 	void StartDissolve();
@@ -288,6 +311,13 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ElimBotSound;
+
+	/* Winning / Crown */
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* CrownSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* CrownComponent;
 
 	/* Grenade */
 	UPROPERTY(VisibleAnywhere)

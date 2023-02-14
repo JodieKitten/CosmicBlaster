@@ -25,8 +25,8 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 		SpawnParams.Instigator = InstigatorPawn;
 
 		AProjectile* SpawnedProjectile = nullptr;
-
-		if (bUseServerSideRewind) //bool set on each weapon
+		
+		if (bUseServerSideRewindDefault) //bool set on each weapon
 		{
 			if (InstigatorPawn->HasAuthority()) //server
 			{
@@ -59,7 +59,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 				}
 			}
 		}
-		else //weapon not using SSR
+		else//weapon not using SSR
 		{
 			if (InstigatorPawn->HasAuthority()) //server
 			{

@@ -13,6 +13,8 @@ class ABlasterHUD;
 class UCharacterOverlay;
 class ABlasterGameMode;
 class ABlasterPlayerState;
+class UUserWidget;
+class UReturnToMainMenu;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -37,6 +39,7 @@ public:
 	void SetElimText(FString InText);
 	void ClearElimText();
 	void SetHUDGrenades(int32 Grenades);
+	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
@@ -49,11 +52,17 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 	void SetHUDTime();
 	void PollInit();
 	void HighPingWarning();
 	void StopHighPingWarning();
 	void CheckPing(float DeltaTime);
+
+	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientElimAnnouncement(APlayerState* Attacker, APlayerState* Victim);
 
 	/* sync time between client and server */
 
@@ -87,6 +96,15 @@ private:
 
 	UPROPERTY()
 	ABlasterGameMode* BlasterGameMode;
+
+	/* return to main menu */
+	UPROPERTY(EditAnywhere, Category = HUD)
+	TSubclassOf<UUserWidget> ReturnToMainMenuWidget;
+
+	UPROPERTY()
+	UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
 
 	float LevelStartingTime;
 	float MatchTime = 0.f;
@@ -134,7 +152,7 @@ private:
 	void ServerReportPingStatus(bool bHighPing);
 
 	UPROPERTY(EditAnywhere)
-	float HighPingThreshold = 50.f;
+	float HighPingThreshold = 100.f;
 
 	float PingAnimationRunningTime = 0.f;
 };

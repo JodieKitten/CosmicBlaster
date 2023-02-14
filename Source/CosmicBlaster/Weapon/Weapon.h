@@ -100,6 +100,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	void PollInit();
+
+	bool bHasSetController = false;
 
 	UPROPERTY()
 	ACosmicBlasterCharacter* BlasterOwnerCharacter;
@@ -115,6 +118,7 @@ protected:
 
 	virtual void OnWeaponStateSet();
 	virtual void OnEquipped();
+	virtual void OnEquippedSecondary();
 	virtual void OnDropped();
 
 	/* Trace end with scatter */
@@ -129,6 +133,9 @@ protected:
 
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewindDefault = false;
 
 	UFUNCTION()
 	void OnPingTooHigh(bool bPingTooHigh);

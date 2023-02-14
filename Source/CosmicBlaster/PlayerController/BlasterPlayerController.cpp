@@ -16,6 +16,7 @@
 #include "CosmicBlaster/GameState/BlasterGameState.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "Components/Image.h"
+#include "CosmicBlaster/HUD/ReturnToMainMenu.h"
 
 
 void ABlasterPlayerController::BeginPlay()
@@ -36,6 +37,35 @@ void ABlasterPlayerController::Tick(float DeltaTime)
 	CheckPing(DeltaTime);
 }
 
+void ABlasterPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	if (InputComponent == nullptr) return;
+
+	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
+}
+
+void ABlasterPlayerController::ShowReturnToMainMenu()
+{
+	if (ReturnToMainMenuWidget == nullptr) return;
+	if (ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+	}
+	if (ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
+	}
+}
+
 void ABlasterPlayerController::CheckPing(float DeltaTime)
 {
 	if (HasAuthority()) return;
@@ -47,7 +77,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Ping: %d"), PlayerState->GetPing() * 4);
+			UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
 			{
 				HighPingWarning();
@@ -591,5 +621,43 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 	{
 		bInitializeGrenades = true;
 		HUDGrenades = Grenades;
+	}
+}
+
+void ABlasterPlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
+{
+	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
+{
+	APlayerState* Self = GetPlayerState<APlayerState>();
+	if (Attacker && Victim && Self)
+	{
+		BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+		if (BlasterHUD)
+		{
+			if (Attacker == Self && Victim != Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", Victim->GetPlayerName());
+				return;
+			}
+			if (Victim == Self && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "you");
+				return;
+			}
+			if (Attacker == Victim && Attacker == Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", "yourself");
+				return;
+			}
+			if (Attacker == Victim && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "themselves");
+				return;
+			}
+			BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), Victim->GetPlayerName());
+		}
 	}
 }
