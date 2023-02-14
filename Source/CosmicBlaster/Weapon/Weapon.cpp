@@ -20,7 +20,7 @@ Initial functions
 
 AWeapon::AWeapon()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	SetReplicateMovement(true);
 
@@ -45,17 +45,10 @@ AWeapon::AWeapon()
 	PickupWidget->SetupAttachment(RootComponent);
 }
 
-void AWeapon::EnableCustomDepth(bool bEnable)
-{
-	if (WeaponMesh)
-	{
-		WeaponMesh->SetRenderCustomDepth(bEnable);
-	}
-}
-
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+
 	if (PickupWidget)
 	{
 		PickupWidget->SetVisibility(false);
@@ -70,6 +63,20 @@ void AWeapon::BeginPlay()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	PollInit();
+}
+
+void AWeapon::PollInit()
+{
+	if (!bHasSetController && HasAuthority() && BlasterOwnerCharacter && BlasterOwnerCharacter->Controller)
+	{
+		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
+		if (BlasterOwnerController && !BlasterOwnerController->HighPingDelegate.IsBound())
+		{
+			BlasterOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+			bHasSetController = true;
+		}
+	}
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -121,6 +128,14 @@ void AWeapon::OnPingTooHigh(bool bPingTooHigh)
 	bUseServerSideRewind = !bPingTooHigh;
 }
 
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
+}
+
 /*
 HUD
 */
@@ -150,6 +165,9 @@ void AWeapon::OnWeaponStateSet()
 	case EWeaponState::EWS_Equipped:
 		OnEquipped();
 		break;
+	case EWeaponState::EWS_EquippedSecondary:
+		OnEquippedSecondary();
+		break;
 	case EWeaponState::EWS_Dropped:
 		OnDropped();
 		break;
@@ -177,12 +195,37 @@ void AWeapon::OnEquipped()
 	}
 	
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
-	if (BlasterOwnerCharacter && bUseServerSideRewind)
+	if (BlasterOwnerCharacter && bUseServerSideRewindDefault && !BlasterOwnerCharacter->IsLocallyControlled())
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
 		if (BlasterOwnerController && HasAuthority() && !BlasterOwnerController->HighPingDelegate.IsBound())
 		{
 			BlasterOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
+}
+
+void AWeapon::OnEquippedSecondary()
+{
+	ShowPickupWidget(false);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetSimulatePhysics(false);
+	WeaponMesh->SetEnableGravity(false);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EnableCustomDepth(false);
+	if (WeaponType == EWeaponType::EWT_SubmachineGun)
+	{
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetEnableGravity(true);
+		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	}
+	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
+	if (BlasterOwnerCharacter && !BlasterOwnerCharacter->IsLocallyControlled())
+	{
+		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
+		if (BlasterOwnerController && HasAuthority() && BlasterOwnerController->HighPingDelegate.IsBound())
+		{
+			BlasterOwnerController->HighPingDelegate.RemoveDynamic(this, &AWeapon::OnPingTooHigh);
 		}
 	}
 }
@@ -204,7 +247,7 @@ void AWeapon::OnDropped()
 	EnableCustomDepth(true);
 
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
-	if (BlasterOwnerCharacter && bUseServerSideRewind)
+	if (BlasterOwnerCharacter && bUseServerSideRewind && !BlasterOwnerCharacter->IsLocallyControlled())
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
 		if (BlasterOwnerController && HasAuthority() && BlasterOwnerController->HighPingDelegate.IsBound())

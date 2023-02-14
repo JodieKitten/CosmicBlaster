@@ -13,6 +13,8 @@ class ABlasterHUD;
 class UCharacterOverlay;
 class ABlasterGameMode;
 class ABlasterPlayerState;
+class UUserWidget;
+class UReturnToMainMenu;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -49,11 +51,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 	void SetHUDTime();
 	void PollInit();
 	void HighPingWarning();
 	void StopHighPingWarning();
 	void CheckPing(float DeltaTime);
+
+	void ShowReturnToMainMenu();
 
 	/* sync time between client and server */
 
@@ -87,6 +92,15 @@ private:
 
 	UPROPERTY()
 	ABlasterGameMode* BlasterGameMode;
+
+	/* return to main menu */
+	UPROPERTY(EditAnywhere, Category = HUD)
+	TSubclassOf<UUserWidget> ReturnToMainMenuWidget;
+
+	UPROPERTY()
+	UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
 
 	float LevelStartingTime;
 	float MatchTime = 0.f;
