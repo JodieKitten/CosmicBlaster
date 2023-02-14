@@ -24,6 +24,8 @@ class ABlasterPlayerState;
 class UBuffComponent;
 class UBoxComponent;
 class ULagCompensationComponent;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -136,8 +138,11 @@ public:
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bReceivedDamage = false;
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGainedTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLostTheLead();
 
 protected:
 	virtual void BeginPlay() override;
@@ -306,6 +311,13 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ElimBotSound;
+
+	/* Winning / Crown */
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* CrownSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* CrownComponent;
 
 	/* Grenade */
 	UPROPERTY(VisibleAnywhere)
