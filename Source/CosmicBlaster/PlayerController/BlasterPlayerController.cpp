@@ -77,6 +77,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
 			{
 				HighPingWarning();
@@ -620,5 +621,43 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 	{
 		bInitializeGrenades = true;
 		HUDGrenades = Grenades;
+	}
+}
+
+void ABlasterPlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
+{
+	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
+{
+	APlayerState* Self = GetPlayerState<APlayerState>();
+	if (Attacker && Victim && Self)
+	{
+		BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+		if (BlasterHUD)
+		{
+			if (Attacker == Self && Victim != Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", Victim->GetPlayerName());
+				return;
+			}
+			if (Victim == Self && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "you");
+				return;
+			}
+			if (Attacker == Victim && Attacker == Self)
+			{
+				BlasterHUD->AddElimAnnouncement("You", "yourself");
+				return;
+			}
+			if (Attacker == Victim && Attacker != Self)
+			{
+				BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), "themselves");
+				return;
+			}
+			BlasterHUD->AddElimAnnouncement(Attacker->GetPlayerName(), Victim->GetPlayerName());
+		}
 	}
 }

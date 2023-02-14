@@ -193,7 +193,7 @@ void AWeapon::OnEquipped()
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	}
-	
+
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 	if (BlasterOwnerCharacter && bUseServerSideRewindDefault && !BlasterOwnerCharacter->IsLocallyControlled())
 	{

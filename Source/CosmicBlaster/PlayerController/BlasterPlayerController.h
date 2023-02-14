@@ -39,6 +39,7 @@ public:
 	void SetElimText(FString InText);
 	void ClearElimText();
 	void SetHUDGrenades(int32 Grenades);
+	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
@@ -59,6 +60,9 @@ protected:
 	void CheckPing(float DeltaTime);
 
 	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientElimAnnouncement(APlayerState* Attacker, APlayerState* Victim);
 
 	/* sync time between client and server */
 
@@ -148,7 +152,7 @@ private:
 	void ServerReportPingStatus(bool bHighPing);
 
 	UPROPERTY(EditAnywhere)
-	float HighPingThreshold = 50.f;
+	float HighPingThreshold = 100.f;
 
 	float PingAnimationRunningTime = 0.f;
 };
