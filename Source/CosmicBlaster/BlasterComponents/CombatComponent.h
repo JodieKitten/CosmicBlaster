@@ -93,6 +93,7 @@ protected:
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 	void ShowAttachedGrenade(bool bShowGrenade);
+	void SetWeaponTypeOnHUD();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float FireDelay);
@@ -127,7 +128,7 @@ protected:
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 	void SetHUDCrosshairs(float DeltaTime);
 	void UpdateCarriedAmmo();
-	void SetWeaponTypeOnHUD();
+
 
 private:
 	UPROPERTY()

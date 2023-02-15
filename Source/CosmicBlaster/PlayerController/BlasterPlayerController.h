@@ -15,6 +15,7 @@ class ABlasterGameMode;
 class ABlasterPlayerState;
 class UUserWidget;
 class UReturnToMainMenu;
+class UCombatComponent;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController

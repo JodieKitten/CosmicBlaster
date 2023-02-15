@@ -127,6 +127,9 @@ void ABlasterPlayerController::OnPossess(APawn* InPawn)
 	if (BlasterCharacter)
 	{
 		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
+		SetHUDShield(BlasterCharacter->GetShield(), BlasterCharacter->GetMaxShield());
+		SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
+
 	}
 }
 
@@ -328,6 +331,8 @@ void ABlasterPlayerController::HandleCooldown()
 	{
 		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
+
+		//BlasterCharacter->PlayMacerenaMontage();
 	}
 }
 
@@ -342,11 +347,6 @@ void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
-
-		if (BlasterHUD && MatchState == MatchState::WaitingToStart)
-		{
-			BlasterHUD->AddAnnouncement();
-		}
 	}
 }
 
@@ -593,7 +593,8 @@ void ABlasterPlayerController::SetElimText(FString InText)
 	bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->ElimText;
 	if (bHUDValid)
 	{
-		FString TextToDisplay = FString::Printf(TEXT("You were eliminated by: %s"), *InText);
+		//FString TextToDisplay = FString::Printf(TEXT("You were eliminated by: %s"), *InText);
+		FString TextToDisplay = FString::Printf(TEXT(""));
 		BlasterHUD->CharacterOverlay->ElimText->SetText(FText::FromString(TextToDisplay));
 	}
 }
