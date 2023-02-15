@@ -118,6 +118,7 @@ public:
 	void PlayReloadMontage();
 	void PlayThrowGrenadeMontage();
 	void PlaySwapMontage();
+	void PlayMacerenaMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -143,6 +144,9 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLostTheLead();
+
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* MacerenaMontage;
 
 protected:
 	virtual void BeginPlay() override;

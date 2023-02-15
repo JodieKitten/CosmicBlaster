@@ -27,8 +27,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 		FHitResult FireHit;
 		WeaponTraceHit(Start, HitTarget, FireHit);
-		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(FireHit.GetActor());
 
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(FireHit.GetActor());
 		if (BlasterCharacter && InstigatorController)
 		{
 			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
@@ -87,6 +87,10 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		if (OutHit.bBlockingHit)
 		{
 			BeamEnd = OutHit.ImpactPoint;
+		}
+		else
+		{
+			OutHit.ImpactPoint = End;
 		}
 
 		if (BeamParticles)

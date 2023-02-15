@@ -776,6 +776,16 @@ void ACosmicBlasterCharacter::PlaySwapMontage()
 	}
 }
 
+void ACosmicBlasterCharacter::PlayMacerenaMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && MacerenaMontage && Combat)
+	{
+		Combat->EquippedWeapon->Destroy();
+		AnimInstance->Montage_Play(MacerenaMontage);
+	}
+}
+
 /*
 Damage / Health functions
 */
@@ -807,8 +817,18 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
 	{
-		Combat->FinishedReloading();
-		PlayHitReactMontage();
+		if (Combat->EquippedWeapon->GetWeaponType() != EWeaponType::EWT_Shotgun)
+		{
+			Combat->FinishedReloading();
+			PlayHitReactMontage();
+		}
+		else
+		{
+			Combat->JumpToShotgunEnd();
+			PlayHitReactMontage();
+		}
+
+		
 	}
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
 	{
