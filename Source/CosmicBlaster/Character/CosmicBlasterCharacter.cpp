@@ -188,7 +188,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 void ACosmicBlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	HideCameraIfCharacterClose();
+	HideCharacterIfCameraClose();
 	PollInit();
 	RotateInPlace(DeltaTime);
 }
@@ -288,7 +288,7 @@ void ACosmicBlasterCharacter::PollInit()
 	}
 }
 
-void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
+void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
 {
 	if (!IsLocallyControlled()) return;
 
@@ -299,6 +299,10 @@ void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
+		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
 	}
 	else
 	{
@@ -306,6 +310,10 @@ void ACosmicBlasterCharacter::HideCameraIfCharacterClose()
 		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
 }
@@ -795,17 +803,17 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	if (bElimmed) return;
 
 	float DamageToHealth = Damage;
-	if (Shield > 0)
+	if (Shield > 0.f)
 	{
 		if (Shield >= Damage)
 		{
 			Shield = FMath::Clamp(Shield - Damage, 0, MaxShield);
-			DamageToHealth = 0; //shield took all the damage
+			DamageToHealth = 0.f; //shield took all the damage
 		}
 		else
 		{
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage); //damage to health minus what shield absorped
 			Shield = 0.f;
-			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0, Damage); //damage to health minus what shield absorped
 		}
 	}
 
@@ -945,6 +953,7 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 	// disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	//Spawn elim bot
 	if (ElimBotEffect)
@@ -1067,7 +1076,7 @@ void ACosmicBlasterCharacter::MulticastGainedTheLead_Implementation()
 	{
 		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 			CrownSystem,
-			GetCapsuleComponent(),
+			GetMesh(),
 			FName(),
 			GetActorLocation() + FVector(0.f, 0.f, 110.f),
 			GetActorRotation(),

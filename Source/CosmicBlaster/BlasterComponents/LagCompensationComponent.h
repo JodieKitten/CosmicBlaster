@@ -82,7 +82,7 @@ public:
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 	UFUNCTION(Server, Reliable)
-	void ServerScoreRequest(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* DamageCauser);
+	void ServerScoreRequest(ACosmicBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
 	UFUNCTION(Server, Reliable)
 	void ShotgunServerScoreRequest(const TArray<ACosmicBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);

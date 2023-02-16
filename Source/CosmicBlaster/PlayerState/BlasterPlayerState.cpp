@@ -6,11 +6,14 @@
 #include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
-void ABlasterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+
+// register for replication
+void ABlasterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ABlasterPlayerState, Defeats); // register for replication
+	DOREPLIFETIME(ABlasterPlayerState, Defeats); 
+	DOREPLIFETIME(ABlasterPlayerState, Team);
 }
 
 void ABlasterPlayerState::AddToScore(float ScoreAmount)

@@ -201,7 +201,7 @@ private:
 	void ServerEquipButtonPressed(); // RPC's (remote procedure calls) functions for client to server (otherwise other way around)
 
 	/* Components */
-	void HideCameraIfCharacterClose();
+	void HideCharacterIfCameraClose();
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* SpringArm;
