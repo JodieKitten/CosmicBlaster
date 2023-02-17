@@ -43,6 +43,12 @@ AWeapon::AWeapon()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+
+	if (WeaponType == EWeaponType::EWT_RocketLauncher || WeaponType == EWeaponType::EWT_GrenadeLauncher)
+	{
+		bUseServerSideRewindDefault = false;
+		bUseServerSideRewind = false;
+	}
 }
 
 void AWeapon::BeginPlay()
@@ -195,10 +201,10 @@ void AWeapon::OnEquipped()
 	}
 
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ACosmicBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
-	if (BlasterOwnerCharacter && bUseServerSideRewindDefault && !BlasterOwnerCharacter->IsLocallyControlled())
+	if (BlasterOwnerCharacter)
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
-		if (BlasterOwnerController && HasAuthority() && !BlasterOwnerController->HighPingDelegate.IsBound())
+		if (BlasterOwnerController && HasAuthority() && bUseServerSideRewindDefault && !BlasterOwnerCharacter->IsLocallyControlled() && !BlasterOwnerController->HighPingDelegate.IsBound())
 		{
 			BlasterOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
 		}

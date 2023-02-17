@@ -28,7 +28,14 @@ public:
 	bool bUseServerSideRewind = false;
 	FVector_NetQuantize TraceStart;
 	FVector_NetQuantize100 InitialVelocity;
+
+	//Only set for Grenades and Rockets
+	UPROPERTY(EditAnywhere)
 	float Damage = 20;
+
+	//Doesn't matter for Grenades or Rockets
+	UPROPERTY(EditAnywhere)
+	float HeadShotDamage = 40;
 
 	UPROPERTY(EditAnywhere)
 	float InitialSpeed = 15000;
