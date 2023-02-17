@@ -278,6 +278,7 @@ void ACosmicBlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f); //not setting score/defeats to 0 - adding 0 to the HUD so it is correct on respawn/beginplay
 			BlasterPlayerState->AddToDefeats(0);
+			SetTeamColour(BlasterPlayerState->GetTeam());
 
 			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
@@ -509,7 +510,7 @@ Equip/Weapon functions
 
 void ACosmicBlasterCharacter::SpawnDefaultWeapon()
 {
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	UWorld* World = GetWorld();
 	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
 	{
@@ -613,8 +614,9 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 		{
 			Combat->SwapWeapons();
 			PlaySwapMontage();
-			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
 			bFinishedSwapping = false;
+			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
+
 		}
 	}
 }
@@ -687,6 +689,12 @@ bool ACosmicBlasterCharacter::IsLocallyReloading()
 {
 	if(Combat == nullptr) return false;
 	return Combat->bLocallyReloading;
+}
+
+bool ACosmicBlasterCharacter::IsHoldingTheFlag() const
+{
+	if (Combat == nullptr) return false;
+	return Combat->bHoldingTheFlag;
 }
 
 /*
@@ -800,7 +808,9 @@ Damage / Health functions
 
 void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	if (bElimmed) return;
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
+	if (bElimmed || BlasterGameMode == nullptr) return;
+	Damage = BlasterGameMode->CalculateDamage(InstigatorController, Controller, Damage);
 
 	float DamageToHealth = Damage;
 	if (Shield > 0.f)
@@ -821,22 +831,12 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 
 	UpdateHUDHealth();
 	UpdateHUDShield();
-
+	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
 	{
-		if (Combat->EquippedWeapon->GetWeaponType() != EWeaponType::EWT_Shotgun)
-		{
-			Combat->FinishedReloading();
-			PlayHitReactMontage();
-		}
-		else
-		{
-			Combat->JumpToShotgunEnd();
-			PlayHitReactMontage();
-		}
-
-		
+		Combat->InterruptedReloading();
+		PlayHitReactMontage();
 	}
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
 	{
@@ -844,10 +844,8 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 		PlayHitReactMontage();
 	}
 
-
 	if (Health == 0.f)
 	{
-		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
 		if (BlasterGameMode)
 		{
 			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
@@ -890,6 +888,30 @@ void ACosmicBlasterCharacter::OnRep_Health(float LastHealth)
 	if (Health < LastHealth)
 	{
 		PlayHitReactMontage();
+	}
+}
+
+/*
+Teams
+*/
+
+void ACosmicBlasterCharacter::SetTeamColour(ETeam Team)
+{
+	if (GetMesh() == nullptr || OriginalMaterial == nullptr)  return;
+	switch (Team)
+	{
+	case ETeam::ET_NoTeam:
+		GetMesh()->SetMaterial(0, OriginalMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		DissolveMaterialInstance = RedDissolveMatInst;
+		break;
 	}
 }
 
@@ -986,7 +1008,7 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 
 void ACosmicBlasterCharacter::ElimTimerFinished()
 {
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	if (BlasterGameMode && !bLeftGame)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
@@ -1038,7 +1060,7 @@ void ACosmicBlasterCharacter::Destroyed()
 		ElimBotComponent->DestroyComponent();
 	}
 
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
 
 	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
@@ -1104,7 +1126,7 @@ Leave game
 
 void ACosmicBlasterCharacter::ServerLeaveGame_Implementation()
 {
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
 	if (BlasterGameMode && BlasterPlayerState)
 	{

@@ -8,6 +8,7 @@
 #include "CosmicBlaster/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
 #include "CosmicBlaster/BlasterTypes/CombatState.h"
+#include "CosmicBlaster/BlasterTypes/Team.h"
 #include "CosmicBlasterCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
@@ -26,6 +27,7 @@ class UBoxComponent;
 class ULagCompensationComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
+class ABlasterGameMode;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -123,6 +125,9 @@ public:
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	/* Teams */
+	void SetTeamColour(ETeam Team);
+
 	/* Elimination */
 	virtual void Destroyed() override;
 
@@ -182,6 +187,9 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
 private:
+	UPROPERTY()
+	ABlasterGameMode* BlasterGameMode;
+
 	/* Movement */
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
@@ -277,6 +285,23 @@ private:
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
 
+	/* Team Colours */
+
+	UPROPERTY(EditAnywhere, Category = Elimination)
+	UMaterialInstance* RedDissolveMatInst;
+
+	UPROPERTY(EditAnywhere, Category = Teams)
+	UMaterialInstance* RedMaterial;
+
+	UPROPERTY(EditAnywhere, Category = Elimination)
+	UMaterialInstance* BlueDissolveMatInst;
+
+	UPROPERTY(EditAnywhere, Category = Teams)
+	UMaterialInstance* BlueMaterial;
+
+	UPROPERTY(EditAnywhere, Category = Teams)
+	UMaterialInstance* OriginalMaterial;
+
 	/* Elimination */
 	bool bElimmed = false;
 	FTimerHandle ElimTimer;
@@ -303,7 +328,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Elimination)
 	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance; //instance to change at run time
 
-	UPROPERTY(EditAnywhere, Category = Elimination)
+	UPROPERTY(VisibleAnywhere, Category = Elimination)
 	UMaterialInstance* DissolveMaterialInstance; //instance set on BP, used with dynamic mat instance
 
 	/* Elimination Bot */
@@ -358,4 +383,5 @@ public:
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
+	bool IsHoldingTheFlag() const;
 };

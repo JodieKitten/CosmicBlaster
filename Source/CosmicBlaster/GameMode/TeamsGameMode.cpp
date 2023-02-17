@@ -5,6 +5,12 @@
 #include "CosmicBlaster/GameState/BlasterGameState.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+
+ATeamsGameMode::ATeamsGameMode()
+{
+	bTeamsMatch = true;
+}
 
 void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 {
@@ -71,6 +77,39 @@ void ATeamsGameMode::HandleMatchHasStarted()
 					BPState->SetTeam(ETeam::ET_BlueTeam);
 				}
 			}
+		}
+	}
+}
+
+float ATeamsGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	ABlasterPlayerState* AttackerPState = Attacker->GetPlayerState<ABlasterPlayerState>();
+	ABlasterPlayerState* VictimPState = Victim->GetPlayerState<ABlasterPlayerState>();
+	if (AttackerPState == nullptr || VictimPState == nullptr) return BaseDamage;
+	if (AttackerPState == VictimPState) return BaseDamage;
+
+	if (AttackerPState->GetTeam() == VictimPState->GetTeam())
+	{
+		return 0.f;
+	}
+	return BaseDamage;
+}
+
+void ATeamsGameMode::PlayerEliminated(ACosmicBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
+{
+	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
+
+	ABlasterGameState* BGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+	ABlasterPlayerState* AttackerPlayerState = AttackerController ? Cast<ABlasterPlayerState>(AttackerController->PlayerState) : nullptr;
+	if (BGameState && AttackerPlayerState)
+	{
+		if (AttackerPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+		{
+			BGameState->BlueTeamScores();
+		}
+		if (AttackerPlayerState->GetTeam() == ETeam::ET_RedTeam)
+		{
+			BGameState->RedTeamScores();
 		}
 	}
 }

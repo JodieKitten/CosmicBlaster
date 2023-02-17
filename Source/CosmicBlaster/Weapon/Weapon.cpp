@@ -43,6 +43,12 @@ AWeapon::AWeapon()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+
+	if (WeaponType == EWeaponType::EWT_RocketLauncher || WeaponType == EWeaponType::EWT_GrenadeLauncher)
+	{
+		bUseServerSideRewindDefault = false;
+		bUseServerSideRewind = false;
+	}
 }
 
 void AWeapon::BeginPlay()

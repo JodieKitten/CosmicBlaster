@@ -35,6 +35,9 @@ public:
 	void FinishedReloading();
 
 	UFUNCTION(BlueprintCallable)
+	void InterruptedReloading();
+
+	UFUNCTION(BlueprintCallable)
 	void FinishedSwap();
 
 	UFUNCTION(BlueprintCallable)
@@ -144,6 +147,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
+
+	bool bHoldingTheFlag = false;
 
 	/* Aiming / Firing */
 	bool bAimButtonPressed = false;

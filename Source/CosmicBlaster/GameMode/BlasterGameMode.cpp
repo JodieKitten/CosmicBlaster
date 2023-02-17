@@ -65,9 +65,14 @@ void ABlasterGameMode::OnMatchStateSet()
 		ABlasterPlayerController* BlasterPlayer = Cast<ABlasterPlayerController>(*It); // dereferecing will give the player controller
 		if (BlasterPlayer)
 		{
-			BlasterPlayer->OnMatchStateSet(MatchState); //sets all player controllers match state
+			BlasterPlayer->OnMatchStateSet(MatchState, bTeamsMatch); //sets all player controllers match state
 		}
 	}
+}
+
+float ABlasterGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	return BaseDamage;
 }
 
 void ABlasterGameMode::PlayerEliminated(ACosmicBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)

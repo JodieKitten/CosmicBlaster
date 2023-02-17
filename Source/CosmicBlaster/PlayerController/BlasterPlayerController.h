@@ -16,6 +16,8 @@ class ABlasterPlayerState;
 class UUserWidget;
 class UReturnToMainMenu;
 class UCombatComponent;
+class ABlasterPlayerState;
+class ABlasterGameState;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -39,14 +41,18 @@ public:
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void SetElimText(FString InText);
 	void ClearElimText();
+	void HideTeamScores();
+	void InitTeamScores();
+	void SetHUDRedTeamScore(int32 RedScore);
+	void SetHUDBlueTeamScore(int32 BlueScore);
 	void SetHUDGrenades(int32 Grenades);
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
 
-	void OnMatchStateSet(FName State);
-	void HandleMatchHasStarted();
+	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
+	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
 
 	float SingleTripTime = 0.f;
@@ -59,6 +65,15 @@ protected:
 	void HighPingWarning();
 	void StopHighPingWarning();
 	void CheckPing(float DeltaTime);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ShowTeamScores)
+	bool bShowTeamScores = false;
+
+	UFUNCTION()
+	void OnRep_ShowTeamScores();
+
+	FString GetInfoText(const TArray<ABlasterPlayerState*>& Players);
+	FString GetTeamsInfoText(ABlasterGameState* BlasterGameState);
 
 	void ShowReturnToMainMenu();
 

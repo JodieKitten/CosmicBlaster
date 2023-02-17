@@ -98,6 +98,7 @@ void UCombatComponent::OnRep_CombatState()
 	case ECombatState::ECS_SwappingWeapons:
 		if (Character && !Character->IsLocallyControlled())
 		{
+			SwapWeapons();
 			Character->PlaySwapMontage();
 		}
 		break;
@@ -288,15 +289,14 @@ void UCombatComponent::SwapWeapons()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied || Character == nullptr) return;
 
-	Character->PlaySwapMontage();
-	Character->bFinishedSwapping = false;
-	CombatState = ECombatState::ECS_SwappingWeapons;
-
 	// switch weapons
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;
 
+	Character->PlaySwapMontage();
+	Character->bFinishedSwapping = false;
+	CombatState = ECombatState::ECS_SwappingWeapons;
 }
 
 bool UCombatComponent::ShouldSwapWeapons()
@@ -883,6 +883,18 @@ void UCombatComponent::FinishedReloading()
 	{
 		UpdateAmmoValues();
 	}
+	if (bFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::InterruptedReloading()
+{
+	if (Character == nullptr) return;
+	bLocallyReloading = false;
+	CombatState = ECombatState::ECS_Unoccupied;
+
 	if (bFireButtonPressed)
 	{
 		Fire();
