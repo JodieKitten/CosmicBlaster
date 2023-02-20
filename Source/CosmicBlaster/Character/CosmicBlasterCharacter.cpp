@@ -205,12 +205,21 @@ void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
 {
+	if (Combat && Combat->bHoldingTheFlag)
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
 	if (bDisableGameplay)
 	{
 		bUseControllerRotationYaw = false;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
+
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
@@ -546,12 +555,13 @@ void ACosmicBlasterCharacter::UpdateHUDAmmo()
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
-	if (OverlappingWeapon)
+	if (IsLocallyControlled() && OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(false);
 	}
 
 	OverlappingWeapon = Weapon;
+
 	if (IsLocallyControlled())
 	{
 		if (OverlappingWeapon)
@@ -730,7 +740,7 @@ void ACosmicBlasterCharacter::PlayHitReactMontage()
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitReactMontage)
+	if (AnimInstance && HitReactMontage && Combat->CombatState != ECombatState::ECS_Reloading)
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
@@ -842,7 +852,7 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	/*UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
 	{
 		Combat->InterruptedReloading();
@@ -852,7 +862,7 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	{
 		Combat->FinishedSwap();
 		PlayHitReactMontage();
-	}
+	}*/
 
 	if (Health == 0.f)
 	{
@@ -966,7 +976,6 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 		{
 			BlasterPlayerController->SetElimText(AttackerName);
 		}
-
 	}
 
 	//play dissolve material
@@ -986,6 +995,7 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetVisibility(false);
 
 	//Spawn elim bot
 	if (ElimBotEffect)
@@ -1013,7 +1023,6 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 		CrownComponent->DestroyComponent();
 	}
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ACosmicBlasterCharacter::ElimTimerFinished, ElimDelay);
-
 }
 
 void ACosmicBlasterCharacter::ElimTimerFinished()
@@ -1098,7 +1107,7 @@ void ACosmicBlasterCharacter::StartDissolve()
 }
 
 /*
-Wining / Crown
+Winning / Crown
 */
 
 void ACosmicBlasterCharacter::MulticastGainedTheLead_Implementation()

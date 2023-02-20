@@ -145,6 +145,11 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+		if (MatchState == MatchState::Cooldown)
+		{
+			ACosmicBlasterCharacter* Character = Cast<ACosmicBlasterCharacter>(ElimmedCharacter);
+			Character->bDisableGameplay = true;
+		}
 	}
 }
 
