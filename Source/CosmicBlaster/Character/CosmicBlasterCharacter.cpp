@@ -287,6 +287,16 @@ void ACosmicBlasterCharacter::PollInit()
 			}
 		}
 	}
+	if (BlasterPlayerController == nullptr)
+	{
+		BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+		if (BlasterPlayerController && Combat)
+		{
+			BlasterPlayerController->SetHUDWeaponType(StartingWeapon->GetWeaponType());
+			BlasterPlayerController->SetHUDWeaponAmmo(StartingWeapon->GetAmmo());
+			Combat->UpdateCarriedAmmo();
+		}
+	}
 }
 
 void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
@@ -514,7 +524,7 @@ void ACosmicBlasterCharacter::SpawnDefaultWeapon()
 	UWorld* World = GetWorld();
 	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
 	{
-		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
 		StartingWeapon->bDestroyWeapon = true;
 		if (Combat)
 		{

@@ -381,9 +381,13 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 
 void UCombatComponent::DropEquippedWeapon()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon && !EquippedWeapon->bDestroyWeapon)
 	{
 		EquippedWeapon->Dropped();
+	}
+	else if (EquippedWeapon && EquippedWeapon->bDestroyWeapon)
+	{
+		EquippedWeapon->Destroy();
 	}
 }
 

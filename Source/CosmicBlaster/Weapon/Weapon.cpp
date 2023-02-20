@@ -77,7 +77,7 @@ void AWeapon::PollInit()
 	if (!bHasSetController && HasAuthority() && BlasterOwnerCharacter && BlasterOwnerCharacter->Controller)
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
-		if (BlasterOwnerController && !BlasterOwnerController->HighPingDelegate.IsBound())
+		if (BlasterOwnerController && bUseServerSideRewindDefault && !BlasterOwnerController->HighPingDelegate.IsBound())
 		{
 			BlasterOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
 			bHasSetController = true;
@@ -340,10 +340,10 @@ void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
 	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	SetHUDAmmo();
-	ClientAddAmmo(AmmoToAdd);
+	MulticastAddAmmo(AmmoToAdd);
 }
 
-void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+void AWeapon::MulticastAddAmmo_Implementation(int32 AmmoToAdd)
 {
 	if (HasAuthority()) return;
 	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
@@ -364,7 +364,7 @@ void AWeapon::SpendRound()
 	{
 		ClientUpdateAmmo(Ammo);
 	}
-	else
+	else if (BlasterOwnerCharacter && BlasterOwnerCharacter->IsLocallyControlled())
 	{
 		++Sequence;
 	}
