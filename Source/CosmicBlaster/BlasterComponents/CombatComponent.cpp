@@ -72,6 +72,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly); // cond_Owner only = replicated to owning client only
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
+	DOREPLIFETIME(UCombatComponent, bHoldingTheFlag);
 }
 
 void UCombatComponent::OnRep_CombatState()
@@ -272,17 +273,28 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
-	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr) //have primary weapon but no secondary
+	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
-		EquipSecondaryWeapon(WeaponToEquip);
+		Character->Crouch();
+		bHoldingTheFlag = true;
+		AttachFlagToLeftHand(WeaponToEquip);
+		WeaponToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
+		WeaponToEquip->SetOwner(Character);
 	}
 	else
 	{
-		EquipPrimaryWeapon(WeaponToEquip);
-	}
+		if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr) //have primary weapon but no secondary
+		{
+			EquipSecondaryWeapon(WeaponToEquip);
+		}
+		else
+		{
+			EquipPrimaryWeapon(WeaponToEquip);
+		}
 
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }
 
 void UCombatComponent::SwapWeapons()
@@ -381,9 +393,13 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 
 void UCombatComponent::DropEquippedWeapon()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon && !EquippedWeapon->bDestroyWeapon)
 	{
 		EquippedWeapon->Dropped();
+	}
+	else if (EquippedWeapon && EquippedWeapon->bDestroyWeapon)
+	{
+		EquippedWeapon->Destroy();
 	}
 }
 
@@ -411,6 +427,16 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 	}
 }
 
+void UCombatComponent::AttachFlagToLeftHand(AWeapon* Flag)
+{
+	if (Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
+	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
+	if (HandSocket)
+	{
+		HandSocket->AttachActor(Flag, Character->GetMesh());
+	}
+}
+
 void UCombatComponent::AttachActorToBackpack(AActor* ActorToAttach)
 {
 	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
@@ -426,6 +452,14 @@ void UCombatComponent::PlayEquipWeaponSound(AWeapon* WeaponToEquip)
 	if (Character && WeaponToEquip && WeaponToEquip->EquipSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, WeaponToEquip->EquipSound, Character->GetActorLocation());
+	}
+}
+
+void UCombatComponent::OnRep_HoldingTheFlag()
+{
+	if (bHoldingTheFlag && Character && Character->IsLocallyControlled())
+	{
+		Character->Crouch();
 	}
 }
 
@@ -616,7 +650,7 @@ void UCombatComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize>& Trace
 void UCombatComponent::StartFireTimer()
 {
 	if (EquippedWeapon == nullptr || Character == nullptr) return;
-	Character->GetWorldTimerManager().SetTimer(FireTimer, this, &ThisClass::FireTimerFinished, EquippedWeapon->FireDelay);
+	Character->GetWorldTimerManager().SetTimer(FireTimer, this, &UCombatComponent::FireTimerFinished, EquippedWeapon->FireDelay);
 }
 
 void UCombatComponent::FireTimerFinished()
@@ -687,8 +721,6 @@ void UCombatComponent::LaunchGrenade()
 	{
 		ServerLaunchGrenade(HitTarget);
 	}
-
-
 }
 
 void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
@@ -759,7 +791,6 @@ void UCombatComponent::UpdateCarriedAmmo()
 		{
 			Controller->SetHUDWeaponType(EquippedWeapon->GetWeaponType());
 		}
-
 	}
 }
 
@@ -819,7 +850,7 @@ void UCombatComponent::Reload()
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if (Character == nullptr || EquippedWeapon == nullptr ) return;
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
 
 	CombatState = ECombatState::ECS_Reloading;
 	if(!Character->IsLocallyControlled()) HandleReload();

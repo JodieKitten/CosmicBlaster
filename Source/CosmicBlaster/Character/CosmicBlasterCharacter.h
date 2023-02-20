@@ -356,6 +356,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass;
 
+	bool bInitializeStartingWeapon = false;
+
+	AWeapon* StartingWeapon;
+
 public:
 	//getters and setters
 	void SetOverlappingWeapon(AWeapon* Weapon);

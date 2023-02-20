@@ -60,10 +60,14 @@ void AWeapon::BeginPlay()
 		PickupWidget->SetVisibility(false);
 	}
 
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
-	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
+	if (HasAuthority())
+	{
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
+	}
+
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -77,7 +81,7 @@ void AWeapon::PollInit()
 	if (!bHasSetController && HasAuthority() && BlasterOwnerCharacter && BlasterOwnerCharacter->Controller)
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
-		if (BlasterOwnerController && !BlasterOwnerController->HighPingDelegate.IsBound())
+		if (BlasterOwnerController && bUseServerSideRewindDefault && !BlasterOwnerController->HighPingDelegate.IsBound())
 		{
 			BlasterOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
 			bHasSetController = true;
@@ -114,7 +118,7 @@ void AWeapon::OnRep_Owner()
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
-	if (BlasterCharacter)
+	if (BlasterCharacter && PickupWidget)
 	{
 		BlasterCharacter->SetOverlappingWeapon(this);
 	}
@@ -126,6 +130,7 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	if (BlasterCharacter)
 	{
 		BlasterCharacter->SetOverlappingWeapon(nullptr);
+
 	}
 }
 
@@ -340,10 +345,10 @@ void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
 	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	SetHUDAmmo();
-	ClientAddAmmo(AmmoToAdd);
+	MulticastAddAmmo(AmmoToAdd);
 }
 
-void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+void AWeapon::MulticastAddAmmo_Implementation(int32 AmmoToAdd)
 {
 	if (HasAuthority()) return;
 	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
@@ -364,7 +369,7 @@ void AWeapon::SpendRound()
 	{
 		ClientUpdateAmmo(Ammo);
 	}
-	else
+	else if (BlasterOwnerCharacter && BlasterOwnerCharacter->IsLocallyControlled())
 	{
 		++Sequence;
 	}

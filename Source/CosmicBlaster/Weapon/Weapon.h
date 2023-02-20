@@ -187,8 +187,8 @@ private:
 	UFUNCTION(Client, Reliable)
 	void ClientUpdateAmmo(int32 ServerAmmo);
 
-	UFUNCTION(Client, Reliable)
-	void ClientAddAmmo(int32 AmmoToAdd);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastAddAmmo(int32 AmmoToAdd);
 
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;

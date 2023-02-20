@@ -125,13 +125,14 @@ void ABlasterPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
+	ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(InPawn);
 	if (BlasterCharacter)
 	{
 		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
 		SetHUDShield(BlasterCharacter->GetShield(), BlasterCharacter->GetMaxShield());
 		SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
-
+		SetHUDWeaponType(BlasterCharacter->GetEquippedWeapon()->GetWeaponType());
 	}
 }
 
@@ -152,8 +153,9 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
 				if (bInitializeWeaponType) SetHUDWeaponType(HUDWeaponType);
 
+
 				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
-				if (BlasterCharacter && BlasterCharacter->GetCombat())
+				if (BlasterCharacter && BlasterCharacter->GetCombat() && BlasterCharacter->GetEquippedWeapon())
 				{
 					if (bInitializeGrenades) SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
 				}
@@ -279,7 +281,7 @@ void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
 
-		if (!HasAuthority()) return;
+		//if (!HasAuthority()) return;
 		if (bShowTeamScores)
 		{
 			InitTeamScores();
@@ -294,6 +296,7 @@ void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 void ABlasterPlayerController::HandleCooldown()
 {
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
 	if (BlasterHUD)
 	{
 		BlasterHUD->CharacterOverlay->RemoveFromParent();
@@ -585,7 +588,7 @@ void ABlasterPlayerController::SetHUDWeaponType(EWeaponType WeaponType)
 			EquippedWeaponType = FString::Printf(TEXT("Assault Rifle"));
 			break;
 		case EWeaponType::EWT_GrenadeLauncher:
-			EquippedWeaponType = FString::Printf(TEXT("Grenaded Launcher"));
+			EquippedWeaponType = FString::Printf(TEXT("Grenade Launcher"));
 			break;
 		case EWeaponType::EWT_Pistol:
 			EquippedWeaponType = FString::Printf(TEXT("Pistol"));

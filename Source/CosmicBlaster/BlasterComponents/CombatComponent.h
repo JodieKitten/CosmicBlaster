@@ -79,6 +79,7 @@ protected:
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void AttachFlagToLeftHand(AWeapon* Flag);
 	void AttachActorToBackpack(AActor* ActorToAttach);
 	void PlayEquipWeaponSound(AWeapon* WeaponToEquip);
 
@@ -148,7 +149,11 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
+	UPROPERTY(ReplicatedUsing = OnRep_HoldingTheFlag)
 	bool bHoldingTheFlag = false;
+
+	UFUNCTION()
+	void OnRep_HoldingTheFlag();
 
 	/* Aiming / Firing */
 	bool bAimButtonPressed = false;
