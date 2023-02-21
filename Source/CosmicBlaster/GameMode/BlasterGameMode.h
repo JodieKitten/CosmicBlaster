@@ -41,6 +41,8 @@ public:
 
 	bool bTeamsMatch = false;
 
+	bool bPlayMacerena = false;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;

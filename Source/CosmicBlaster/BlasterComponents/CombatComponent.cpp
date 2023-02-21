@@ -16,6 +16,7 @@
 #include "Sound/SoundCue.h"
 #include "CosmicBlaster/Weapon/Projectile.h"
 #include "CosmicBlaster/Weapon/Shotgun.h"
+#include "CosmicBlaster/Weapon/Flag.h"
 
 /*
 Initial functions
@@ -73,6 +74,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
 	DOREPLIFETIME(UCombatComponent, bHoldingTheFlag);
+	DOREPLIFETIME(UCombatComponent, TheFlag);
 }
 
 void UCombatComponent::OnRep_CombatState()
@@ -275,10 +277,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
+		TheFlag = Cast<AFlag>(WeaponToEquip);
 		Character->Crouch();
 		bHoldingTheFlag = true;
-		AttachFlagToLeftHand(WeaponToEquip);
+		TheFlag->ResetFlag();
 		WeaponToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
+		AttachFlagToLeftHand(WeaponToEquip);
 		WeaponToEquip->SetOwner(Character);
 	}
 	else
@@ -460,6 +464,14 @@ void UCombatComponent::OnRep_HoldingTheFlag()
 	if (bHoldingTheFlag && Character && Character->IsLocallyControlled())
 	{
 		Character->Crouch();
+	}
+}
+
+void UCombatComponent::OnRep_TheFlag()
+{
+	if (TheFlag)
+	{
+		TheFlag->ResetFlag();
 	}
 }
 
@@ -907,17 +919,20 @@ void UCombatComponent::JumpToShotgunEnd()
 void UCombatComponent::FinishedReloading()
 {
 	if (Character == nullptr) return;
-	bLocallyReloading = false;
-	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (Character->HasAuthority())
 	{
 		UpdateAmmoValues();
 	}
+
+	bLocallyReloading = false;
+	CombatState = ECombatState::ECS_Unoccupied;
+
 	if (bFireButtonPressed)
 	{
 		Fire();
 	}
+
 }
 
 void UCombatComponent::InterruptedReloading()

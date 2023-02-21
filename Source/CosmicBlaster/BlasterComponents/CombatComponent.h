@@ -13,6 +13,7 @@ class AWeapon;
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 class ABlasterHUD;
+class AFlag;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class COSMICBLASTER_API UCombatComponent : public UActorComponent
@@ -154,6 +155,12 @@ private:
 
 	UFUNCTION()
 	void OnRep_HoldingTheFlag();
+
+	UPROPERTY(ReplicatedUsing = OnRep_TheFlag)
+	AFlag* TheFlag;
+
+	UFUNCTION()
+	void OnRep_TheFlag();
 
 	/* Aiming / Firing */
 	bool bAimButtonPressed = false;

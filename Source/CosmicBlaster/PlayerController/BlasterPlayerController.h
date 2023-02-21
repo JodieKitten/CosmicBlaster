@@ -57,6 +57,9 @@ public:
 
 	float SingleTripTime = 0.f;
 
+	UPROPERTY(Replicated)
+	bool bPlayMacerena = false;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

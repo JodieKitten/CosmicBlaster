@@ -32,6 +32,7 @@ void ABlasterGameMode::Tick(float Deltatime)
 
 	if (MatchState == MatchState::WaitingToStart)
 	{
+		bPlayMacerena = false;
 		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f)
 		{
@@ -49,6 +50,7 @@ void ABlasterGameMode::Tick(float Deltatime)
 	else if (MatchState == MatchState::Cooldown)
 	{
 		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		bPlayMacerena = true;
 		if (CountdownTime <= 0.f)
 		{
 			RestartGame(); //unreal engine function

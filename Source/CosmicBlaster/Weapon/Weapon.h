@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "WeaponTypes.h"
+#include "CosmicBlaster/BlasterTypes/Team.h"
 #include "Weapon.generated.h"
 
 class USphereComponent;
@@ -50,7 +51,7 @@ public:
 	EFireType FireType;
 
 	virtual void Fire(const FVector& HitTarget);
-	void Dropped();
+	virtual void Dropped();
 	void SetHUDAmmo();
 	void AddAmmo(int32 AmmoToAdd);
 
@@ -146,6 +147,9 @@ protected:
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere)
+	ETeam Team;
 
 	/* Components */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")

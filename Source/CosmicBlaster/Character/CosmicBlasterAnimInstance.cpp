@@ -40,6 +40,7 @@ void UCosmicBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bRotateRootBone = BlasterCharacter->ShouldRotateRootBone();
 	bElimmed = BlasterCharacter->IsElimmed();
 	bHoldingTheFlag = BlasterCharacter->IsHoldingTheFlag();
+	bPlayMacerena = BlasterCharacter->PlayMacerenaMontage();
 	
 	FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(BlasterCharacter->GetVelocity());
