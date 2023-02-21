@@ -120,7 +120,7 @@ public:
 	void PlayReloadMontage();
 	void PlayThrowGrenadeMontage();
 	void PlaySwapMontage();
-	void PlayMacerenaMontage();
+	bool PlayMacerenaMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -158,6 +158,8 @@ protected:
 	void PollInit(); // poll for any relevant classes and initialize the HUD
 	void DropOrDestroyWeapon(AWeapon* Weapon);
 	void DropOrDestroyWeapons();
+	void SetSpawnPoint();
+	void OnPlayerStateInitialized();
 
 	 /* Inputs */
 	void MoveForward(float Value);
@@ -388,4 +390,6 @@ public:
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 	bool IsHoldingTheFlag() const;
+	ETeam GetTeam();
+	void SetHoldingTheFlag(bool bHolding);
 };

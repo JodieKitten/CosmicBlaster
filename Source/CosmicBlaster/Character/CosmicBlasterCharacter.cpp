@@ -27,6 +27,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "CosmicBlaster/GameState/BlasterGameState.h"
+#include "CosmicBlaster/Weapon/Flag.h"
+#include "CosmicBlaster/PlayerStart/TeamPlayerStart.h"
 
 /*
 Initial functions
@@ -203,39 +205,6 @@ void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ACosmicBlasterCharacter, Shield);
 }
 
-void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
-{
-	if (Combat && Combat->bHoldingTheFlag)
-	{
-		bUseControllerRotationYaw = false;
-		GetCharacterMovement()->bOrientRotationToMovement = true;
-		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
-		return;
-	}
-
-	if (bDisableGameplay)
-	{
-		bUseControllerRotationYaw = false;
-		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
-		return;
-	}
-
-	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
-	{
-		AimOffset(DeltaTime);
-	}
-	else
-	{
-		TimeSinceLastMovementReplication += DeltaTime;
-		if (TimeSinceLastMovementReplication > 0.25f)
-		{
-			OnRep_ReplicatedMovement();
-		}
-
-		CalculateAO_Pitch();
-	}
-}
-
 void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -285,9 +254,7 @@ void ACosmicBlasterCharacter::PollInit()
 		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
 		if (BlasterPlayerState)
 		{
-			BlasterPlayerState->AddToScore(0.f); //not setting score/defeats to 0 - adding 0 to the HUD so it is correct on respawn/beginplay
-			BlasterPlayerState->AddToDefeats(0);
-			SetTeamColour(BlasterPlayerState->GetTeam());
+			OnPlayerStateInitialized();
 
 			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
@@ -306,6 +273,14 @@ void ACosmicBlasterCharacter::PollInit()
 			Combat->UpdateCarriedAmmo();
 		}
 	}
+}
+
+void ACosmicBlasterCharacter::OnPlayerStateInitialized()
+{
+	BlasterPlayerState->AddToScore(0.f); //not setting score/defeats to 0 - adding 0 to the HUD so it is correct on respawn/beginplay
+	BlasterPlayerState->AddToDefeats(0);
+	SetTeamColour(BlasterPlayerState->GetTeam());
+	SetSpawnPoint();
 }
 
 void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
@@ -334,6 +309,53 @@ void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
 		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
 		{
 			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+	}
+}
+
+/*
+Teams
+*/
+
+void ACosmicBlasterCharacter::SetTeamColour(ETeam Team)
+{
+	if (GetMesh() == nullptr || OriginalMaterial == nullptr)  return;
+	switch (Team)
+	{
+	case ETeam::ET_NoTeam:
+		GetMesh()->SetMaterial(0, OriginalMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		DissolveMaterialInstance = RedDissolveMatInst;
+		break;
+	}
+}
+
+void ACosmicBlasterCharacter::SetSpawnPoint()
+{
+	if (HasAuthority() && BlasterPlayerState->GetTeam() != ETeam::ET_NoTeam)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		for (auto Start : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamStart = Cast<ATeamPlayerStart>(Start);
+			if (TeamStart && TeamStart->Team == BlasterPlayerState->GetTeam())
+			{
+				TeamPlayerStarts.Add(TeamStart);
+			}
+		}
+		if (TeamPlayerStarts.Num() > 0)
+		{
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];
+			SetActorLocationAndRotation(ChosenPlayerStart->GetActorLocation(), ChosenPlayerStart->GetActorRotation());
 		}
 	}
 }
@@ -377,6 +399,7 @@ void ACosmicBlasterCharacter::LookUp(float Value)
 void ACosmicBlasterCharacter::CrouchButtonPressed()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bIsCrouched)
 	{
 		UnCrouch(); //unreal pre-made function
@@ -391,6 +414,7 @@ void ACosmicBlasterCharacter::CrouchButtonPressed()
 void ACosmicBlasterCharacter::Jump()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -464,6 +488,45 @@ void ACosmicBlasterCharacter::OnRep_ReplicatedMovement()
 
 	SimProxiesTurn();
 	TimeSinceLastMovementReplication = 0.f;
+}
+
+void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
+{
+	if (Combat && Combat->bHoldingTheFlag)
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
+	if (Combat && Combat->EquippedWeapon)
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
+
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
+	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if (TimeSinceLastMovementReplication > 0.25f)
+		{
+			OnRep_ReplicatedMovement();
+		}
+
+		CalculateAO_Pitch();
+	}
 }
 
 /*
@@ -586,6 +649,7 @@ void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 void ACosmicBlasterCharacter::AimButtonPressed()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat && Combat->EquippedWeapon != nullptr)
 	{
 		Combat->SetAiming(true);
@@ -595,6 +659,7 @@ void ACosmicBlasterCharacter::AimButtonPressed()
 void ACosmicBlasterCharacter::AimButtonReleased()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat)
 	{
 		Combat->SetAiming(false);
@@ -604,6 +669,7 @@ void ACosmicBlasterCharacter::AimButtonReleased()
 void ACosmicBlasterCharacter::FireButtonPressed()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat && Combat->EquippedWeapon != nullptr)
 	{
 		Combat->FireButtonPressed(true);
@@ -613,6 +679,7 @@ void ACosmicBlasterCharacter::FireButtonPressed()
 void ACosmicBlasterCharacter::FireButtonReleased()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
@@ -624,6 +691,7 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
+		if (Combat->bHoldingTheFlag) return;
 		if (Combat->CombatState == ECombatState::ECS_Unoccupied)
 		{
 			ServerEquipButtonPressed();
@@ -669,6 +737,7 @@ bool ACosmicBlasterCharacter::IsAiming()
 void ACosmicBlasterCharacter::ReloadButtonPressed()
 {
 	if (bDisableGameplay) return;
+	if (Combat && Combat->bHoldingTheFlag) return;
 	if (Combat)
 	{
 		Combat->Reload();
@@ -679,6 +748,7 @@ void ACosmicBlasterCharacter::GrenadeButtonPressed()
 {
 	if (Combat)
 	{
+		if (Combat->bHoldingTheFlag) return;
 		Combat->ThrowGrenade();
 	}
 }
@@ -715,6 +785,19 @@ bool ACosmicBlasterCharacter::IsHoldingTheFlag() const
 {
 	if (Combat == nullptr) return false;
 	return Combat->bHoldingTheFlag;
+}
+
+ETeam ACosmicBlasterCharacter::GetTeam()
+{
+	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterPlayerState == nullptr) return ETeam::ET_NoTeam;
+	return BlasterPlayerState->GetTeam();;
+}
+
+void ACosmicBlasterCharacter::SetHoldingTheFlag(bool bHolding)
+{
+	if (Combat == nullptr) return;
+	Combat->bHoldingTheFlag = bHolding;
 }
 
 /*
@@ -812,14 +895,10 @@ void ACosmicBlasterCharacter::PlaySwapMontage()
 	}
 }
 
-void ACosmicBlasterCharacter::PlayMacerenaMontage()
+bool ACosmicBlasterCharacter::PlayMacerenaMontage()
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && MacerenaMontage && Combat)
-	{
-		Combat->EquippedWeapon->Destroy();
-		AnimInstance->Montage_Play(MacerenaMontage);
-	}
+	if (BlasterPlayerController == nullptr) return false;
+	return BlasterPlayerController->bPlayMacerena;
 }
 
 /*
@@ -911,29 +990,6 @@ void ACosmicBlasterCharacter::OnRep_Health(float LastHealth)
 	}
 }
 
-/*
-Teams
-*/
-
-void ACosmicBlasterCharacter::SetTeamColour(ETeam Team)
-{
-	if (GetMesh() == nullptr || OriginalMaterial == nullptr)  return;
-	switch (Team)
-	{
-	case ETeam::ET_NoTeam:
-		GetMesh()->SetMaterial(0, OriginalMaterial);
-		DissolveMaterialInstance = BlueDissolveMatInst;
-		break;
-	case ETeam::ET_BlueTeam:
-		GetMesh()->SetMaterial(0, BlueMaterial);
-		DissolveMaterialInstance = BlueDissolveMatInst;
-		break;
-	case ETeam::ET_RedTeam:
-		GetMesh()->SetMaterial(0, RedMaterial);
-		DissolveMaterialInstance = RedDissolveMatInst;
-		break;
-	}
-}
 
 /*
 Elimination / Dissolve effect
@@ -1066,6 +1122,10 @@ void ACosmicBlasterCharacter::DropOrDestroyWeapons()
 		if (Combat->SecondaryWeapon)
 		{
 			DropOrDestroyWeapon(Combat->SecondaryWeapon);
+		}
+		if (Combat->TheFlag)
+		{
+			Combat->TheFlag->Dropped();
 		}
 	}
 }
