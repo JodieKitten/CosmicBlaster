@@ -500,6 +500,12 @@ void ACosmicBlasterCharacter::RotateInPlace(float DeltaTime)
 		return;
 	}
 
+	if (Combat && Combat->EquippedWeapon)
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
+
 	if (bDisableGameplay)
 	{
 		bUseControllerRotationYaw = false;
@@ -788,6 +794,12 @@ ETeam ACosmicBlasterCharacter::GetTeam()
 	return BlasterPlayerState->GetTeam();;
 }
 
+void ACosmicBlasterCharacter::SetHoldingTheFlag(bool bHolding)
+{
+	if (Combat == nullptr) return;
+	Combat->bHoldingTheFlag = bHolding;
+}
+
 /*
 Montage functions
 */
@@ -885,8 +897,8 @@ void ACosmicBlasterCharacter::PlaySwapMontage()
 
 bool ACosmicBlasterCharacter::PlayMacerenaMontage()
 {
-	if (BlasterGameMode == nullptr) return false;
-	return BlasterGameMode->bPlayMacerena;
+	if (BlasterPlayerController == nullptr) return false;
+	return BlasterPlayerController->bPlayMacerena;
 }
 
 /*

@@ -57,8 +57,11 @@ public:
 
 	float SingleTripTime = 0.f;
 
-	UPROPERTY(Replicated)
-	bool bPlayMacerena = false;
+	UPROPERTY(ReplicatedUsing = OnRep_PlayMacerena, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	bool bPlayMacerena;
+
+	UFUNCTION()
+	void OnRep_PlayMacerena();
 
 protected:
 	virtual void BeginPlay() override;

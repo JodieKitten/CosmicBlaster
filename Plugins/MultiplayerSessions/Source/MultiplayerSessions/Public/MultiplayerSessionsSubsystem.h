@@ -45,6 +45,9 @@ public:
 	void DestroySession();
 	void StartSession();
 
+	int32 DesiredNumPublicConnections{};
+	FString DesiredMatchType{};
+
 protected:
 	/*
 	Internal callbacks for the delegates, add to the Online Session Interface delegate list

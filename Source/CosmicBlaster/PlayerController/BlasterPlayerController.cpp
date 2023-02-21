@@ -119,6 +119,7 @@ void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ABlasterPlayerController, MatchState);
 	DOREPLIFETIME(ABlasterPlayerController, bShowTeamScores);
+	DOREPLIFETIME(ABlasterPlayerController, bPlayMacerena);
 }
 
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
@@ -132,7 +133,7 @@ void ABlasterPlayerController::OnPossess(APawn* InPawn)
 		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
 		SetHUDShield(BlasterCharacter->GetShield(), BlasterCharacter->GetMaxShield());
 		SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
-		SetHUDWeaponType(BlasterCharacter->GetEquippedWeapon()->GetWeaponType());
+		//SetHUDWeaponType(BlasterCharacter->GetEquippedWeapon()->GetWeaponType());
 	}
 }
 
@@ -268,6 +269,8 @@ void ABlasterPlayerController::OnRep_MatchState()
 void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
 	if(HasAuthority()) bShowTeamScores = bTeamsMatch;
+	bPlayMacerena = false;
+
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
 	if (BlasterHUD)
 	{
@@ -322,13 +325,13 @@ void ABlasterPlayerController::HandleCooldown()
 		}
 	}
 
+	bPlayMacerena = true;
+
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter && BlasterCharacter->GetCombat())
 	{
 		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
-
-		//BlasterCharacter->PlayMacerenaMontage();
 	}
 }
 
@@ -436,6 +439,15 @@ void ABlasterPlayerController::OnRep_ShowTeamScores()
 	}
 }
 
+void ABlasterPlayerController::OnRep_PlayMacerena()
+{
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	if (bPlayMacerena && BlasterCharacter && BlasterCharacter->IsLocallyControlled())
+	{
+		BlasterCharacter->GetEquippedWeapon()->Destroy();
+		BlasterCharacter->PlayMacerenaMontage();
+	}
+}
 
 /*
 Set HUD

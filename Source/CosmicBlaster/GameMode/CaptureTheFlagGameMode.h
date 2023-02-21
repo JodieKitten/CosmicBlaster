@@ -6,12 +6,15 @@
 #include "TeamsGameMode.h"
 #include "CaptureTheFlagGameMode.generated.h"
 
-/**
- * 
- */
+class AFlag;
+class AFlagZone;
+
 UCLASS()
 class COSMICBLASTER_API ACaptureTheFlagGameMode : public ATeamsGameMode
 {
 	GENERATED_BODY()
 	
+public:
+	virtual void PlayerEliminated(ACosmicBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController) override;
+	void FlagCaptured(AFlag* Flag, AFlagZone* Zone);
 };
