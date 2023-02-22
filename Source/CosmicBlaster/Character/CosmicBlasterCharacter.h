@@ -169,6 +169,7 @@ public:
 	void PlayMacerena(bool bPlayMacerena);
 
 	void PlayFireworks();
+	void PlayFireworkSound();
 
 protected:
 	virtual void BeginPlay() override;
@@ -385,6 +386,11 @@ private:
 
 	UPROPERTY()
 	class UParticleSystemComponent* FireworkComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* FireworkSound;
+
+
 
 public:
 	//getters and setters

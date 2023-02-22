@@ -334,6 +334,7 @@ void ABlasterPlayerController::HandleCooldown()
 		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
 		BlasterCharacter->PlayFireworks();
+		BlasterCharacter->PlayFireworkSound();
 	}
 }
 

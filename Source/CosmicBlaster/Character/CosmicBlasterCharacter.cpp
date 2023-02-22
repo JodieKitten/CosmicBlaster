@@ -1269,3 +1269,15 @@ void ACosmicBlasterCharacter::PlayFireworks()
 		);
 	}
 }
+
+void ACosmicBlasterCharacter::PlayFireworkSound()
+{
+	if (FireworkSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			FireworkSound,
+			GetActorLocation()
+		);
+	}
+}
