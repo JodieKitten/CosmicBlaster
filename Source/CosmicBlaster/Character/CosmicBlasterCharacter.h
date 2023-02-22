@@ -120,7 +120,7 @@ public:
 	void PlayReloadMontage();
 	void PlayThrowGrenadeMontage();
 	void PlaySwapMontage();
-	bool PlayMacerenaMontage();
+	void PlayMacerenaMontage();
 
 	/* Replication */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -152,6 +152,24 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* MacerenaMontage;
+
+
+	//// macerena test
+	UPROPERTY(ReplicatedUsing = OnRep_PlayMacerena)
+	bool bShouldPlayMacerena = false;
+
+	bool bCooldown = false;
+
+	UFUNCTION()
+	void OnRep_PlayMacerena();
+
+	UFUNCTION(Server, Reliable)
+	void ServerPlayMacerena(bool bPlayMacerena);
+
+	void PlayMacerena(bool bPlayMacerena);
+
+	void PlayFireworks();
+	void PlayFireworkSound();
 
 protected:
 	virtual void BeginPlay() override;
@@ -362,6 +380,18 @@ private:
 
 	AWeapon* StartingWeapon;
 
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* FireworkSystem;
+
+	UPROPERTY()
+	class UParticleSystemComponent* FireworkComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* FireworkSound;
+
+
+
 public:
 	//getters and setters
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -392,4 +422,5 @@ public:
 	bool IsHoldingTheFlag() const;
 	ETeam GetTeam();
 	void SetHoldingTheFlag(bool bHolding);
+	bool ShouldPlayMacerenaMontage();
 };

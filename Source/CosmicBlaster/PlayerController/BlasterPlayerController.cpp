@@ -78,8 +78,8 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetPing() * 4);
-			if (PlayerState->GetPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
+			UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetCompressedPing() * 4);
+			if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
@@ -119,7 +119,6 @@ void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ABlasterPlayerController, MatchState);
 	DOREPLIFETIME(ABlasterPlayerController, bShowTeamScores);
-	DOREPLIFETIME(ABlasterPlayerController, bPlayMacerena);
 }
 
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
@@ -153,7 +152,7 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
 				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
 				if (bInitializeWeaponType) SetHUDWeaponType(HUDWeaponType);
-
+				if (bShowTeamScores) InitTeamScores();
 
 				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat() && BlasterCharacter->GetEquippedWeapon())
@@ -195,6 +194,7 @@ void ABlasterPlayerController::StopHighPingWarning()
 /*
 Time sync 
 */
+
 
 void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
 {
@@ -269,7 +269,7 @@ void ABlasterPlayerController::OnRep_MatchState()
 void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
 	if(HasAuthority()) bShowTeamScores = bTeamsMatch;
-	bPlayMacerena = false;
+	//bPlayMacerena = false;
 
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
 	if (BlasterHUD)
@@ -325,13 +325,16 @@ void ABlasterPlayerController::HandleCooldown()
 		}
 	}
 
-	bPlayMacerena = true;
+	//bPlayMacerena = true;
 
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter && BlasterCharacter->GetCombat())
 	{
+		BlasterCharacter->PlayMacerenaMontage();
 		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
+		BlasterCharacter->PlayFireworks();
+		BlasterCharacter->PlayFireworkSound();
 	}
 }
 
@@ -439,7 +442,7 @@ void ABlasterPlayerController::OnRep_ShowTeamScores()
 	}
 }
 
-void ABlasterPlayerController::OnRep_PlayMacerena()
+/*void ABlasterPlayerController::OnRep_PlayMacerena()
 {
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (bPlayMacerena && BlasterCharacter && BlasterCharacter->IsLocallyControlled())
@@ -447,7 +450,7 @@ void ABlasterPlayerController::OnRep_PlayMacerena()
 		BlasterCharacter->GetEquippedWeapon()->Destroy();
 		BlasterCharacter->PlayMacerenaMontage();
 	}
-}
+}*/
 
 /*
 Set HUD
@@ -466,6 +469,7 @@ void ABlasterPlayerController::SetHUDTime()
 		BlasterGameMode = BlasterGameMode == nullptr ? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 		if (BlasterGameMode)
 		{
+			LevelStartingTime = BlasterGameMode->LevelStartingTime;
 			SecondsLeft = FMath::CeilToInt(BlasterGameMode->GetCountdownTime() + LevelStartingTime);
 		}
 	}

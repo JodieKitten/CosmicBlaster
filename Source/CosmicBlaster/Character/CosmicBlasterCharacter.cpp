@@ -29,6 +29,8 @@
 #include "CosmicBlaster/GameState/BlasterGameState.h"
 #include "CosmicBlaster/Weapon/Flag.h"
 #include "CosmicBlaster/PlayerStart/TeamPlayerStart.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
 
 /*
 Initial functions
@@ -203,6 +205,7 @@ void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ACosmicBlasterCharacter, Health);
 	DOREPLIFETIME(ACosmicBlasterCharacter, bDisableGameplay);
 	DOREPLIFETIME(ACosmicBlasterCharacter, Shield);
+	DOREPLIFETIME(ACosmicBlasterCharacter, bShouldPlayMacerena);
 }
 
 void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -266,7 +269,7 @@ void ACosmicBlasterCharacter::PollInit()
 	if (BlasterPlayerController == nullptr)
 	{
 		BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
-		if (BlasterPlayerController && Combat)
+		if (BlasterPlayerController && Combat && StartingWeapon)
 		{
 			BlasterPlayerController->SetHUDWeaponType(StartingWeapon->GetWeaponType());
 			BlasterPlayerController->SetHUDWeaponAmmo(StartingWeapon->GetAmmo());
@@ -701,10 +704,9 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 		if (bSwap)
 		{
 			Combat->SwapWeapons();
-			PlaySwapMontage();
 			bFinishedSwapping = false;
 			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
-
+			PlaySwapMontage();
 		}
 	}
 }
@@ -800,6 +802,14 @@ void ACosmicBlasterCharacter::SetHoldingTheFlag(bool bHolding)
 	Combat->bHoldingTheFlag = bHolding;
 }
 
+bool ACosmicBlasterCharacter::ShouldPlayMacerenaMontage()
+{
+	return bShouldPlayMacerena;
+
+	/*if (BlasterPlayerController == nullptr) return false;
+	return BlasterPlayerController->bPlayMacerena;*/
+}
+
 /*
 Montage functions
 */
@@ -823,7 +833,7 @@ void ACosmicBlasterCharacter::PlayHitReactMontage()
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitReactMontage && Combat->CombatState != ECombatState::ECS_Reloading)
+	if (AnimInstance && HitReactMontage && Combat->CombatState == ECombatState::ECS_Unoccupied)
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
@@ -895,10 +905,14 @@ void ACosmicBlasterCharacter::PlaySwapMontage()
 	}
 }
 
-bool ACosmicBlasterCharacter::PlayMacerenaMontage()
+void ACosmicBlasterCharacter::PlayMacerenaMontage()
 {
-	if (BlasterPlayerController == nullptr) return false;
-	return BlasterPlayerController->bPlayMacerena;
+	PlayMacerena(true);
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && MacerenaMontage)
+	{
+		AnimInstance->Montage_Play(MacerenaMontage);
+	}
 }
 
 /*
@@ -1210,5 +1224,60 @@ void ACosmicBlasterCharacter::ServerLeaveGame_Implementation()
 	if (BlasterGameMode && BlasterPlayerState)
 	{
 		BlasterGameMode->PlayerLeftGame(BlasterPlayerState);
+	}
+}
+
+/* Macerena */
+void ACosmicBlasterCharacter::OnRep_PlayMacerena()
+{
+	if(IsLocallyControlled()) bShouldPlayMacerena = bCooldown;
+}
+
+void ACosmicBlasterCharacter::ServerPlayMacerena_Implementation(bool bPlayMacerena)
+{
+	bShouldPlayMacerena = bPlayMacerena;
+
+	//maybe destroy weapon here?
+	if (Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Destroy();
+	}
+}
+
+void ACosmicBlasterCharacter::PlayMacerena(bool bPlayMacerena)
+{
+	bShouldPlayMacerena = bPlayMacerena;
+	ServerPlayMacerena(bPlayMacerena);
+	if (IsLocallyControlled())
+	{
+		bCooldown = bPlayMacerena;
+		//PlayMacerenaMontage();
+	}
+}
+
+void ACosmicBlasterCharacter::PlayFireworks()
+{
+	if (FireworkSystem)
+	{
+		FireworkComponent = UGameplayStatics::SpawnEmitterAttached(
+			FireworkSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation() + FVector(0.f, 10.f, 0.f),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition
+		);
+	}
+}
+
+void ACosmicBlasterCharacter::PlayFireworkSound()
+{
+	if (FireworkSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			FireworkSound,
+			GetActorLocation()
+		);
 	}
 }
