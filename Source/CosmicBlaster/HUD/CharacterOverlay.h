@@ -72,6 +72,4 @@ public:
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* HighPingAnimation;
-
-
 };

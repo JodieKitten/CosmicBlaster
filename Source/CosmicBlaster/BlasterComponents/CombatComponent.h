@@ -80,7 +80,7 @@ protected:
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
-	void AttachFlagToLeftHand(AWeapon* Flag);
+	void AttachFlagToLeftHand(AFlag* Flag);
 	void AttachActorToBackpack(AActor* ActorToAttach);
 	void PlayEquipWeaponSound(AWeapon* WeaponToEquip);
 

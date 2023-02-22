@@ -41,10 +41,10 @@ void AFlag::ResetFlag()
 		FlagBearer->UnCrouch();
 	}
 
-	FlagMesh->SetSimulatePhysics(false);
+	/*FlagMesh->SetSimulatePhysics(false);
 	FlagMesh->SetEnableGravity(false);
 	FlagMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);*/
 
 	if (!HasAuthority()) return;
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
