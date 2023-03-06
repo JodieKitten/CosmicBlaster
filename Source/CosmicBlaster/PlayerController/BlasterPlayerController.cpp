@@ -18,6 +18,9 @@
 #include "Components/Image.h"
 #include "CosmicBlaster/HUD/ReturnToMainMenu.h"
 #include "CosmicBlaster/BlasterTypes/Announcement.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
+#include "EnhancedInputComponent.h"
 
 
 void ABlasterPlayerController::BeginPlay()
@@ -28,6 +31,15 @@ void ABlasterPlayerController::BeginPlay()
 
 	ServerCheckMatchState();
 }
+
+/*void ABlasterPlayerController::Interact()
+{
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	if (BlasterCharacter == nullptr) return;
+
+	BlasterCharacter->Clear.Broadcast();
+	BlasterCharacter->InteractWithObject();
+}*/
 
 void ABlasterPlayerController::Tick(float DeltaTime)
 {
@@ -44,6 +56,7 @@ void ABlasterPlayerController::SetupInputComponent()
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
+	//InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
 }
 
 void ABlasterPlayerController::ShowReturnToMainMenu()
@@ -325,16 +338,19 @@ void ABlasterPlayerController::HandleCooldown()
 		}
 	}
 
-	//bPlayMacerena = true;
-
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter && BlasterCharacter->GetCombat())
 	{
 		BlasterCharacter->PlayMacerenaMontage();
-		BlasterCharacter->bDisableGameplay = true;
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
-		BlasterCharacter->PlayFireworks();
-		BlasterCharacter->PlayFireworkSound();
+
+		ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+		TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;
+		for (auto Winner : TopPlayers)
+		{
+			BlasterCharacter->PlayFireworks(TopPlayers);
+			BlasterCharacter->PlayFireworkSound(TopPlayers);
+		}
 	}
 }
 

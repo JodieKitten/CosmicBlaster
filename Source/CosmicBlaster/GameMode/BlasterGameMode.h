@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "CosmicBlaster/CosmicBlaster.h"
 #include "BlasterGameMode.generated.h"
 
 class ACosmicBlasterCharacter;
@@ -47,6 +48,12 @@ protected:
 
 private:
 	float CountdownTime = 0.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float NearbyRadius = 500.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	FVector DefaultLocation = FVector(0, 0, 0);
 
 public:
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }

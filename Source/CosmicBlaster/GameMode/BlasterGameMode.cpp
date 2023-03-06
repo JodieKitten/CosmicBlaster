@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "CosmicBlaster/GameState/BlasterGameState.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 namespace MatchState
 {
@@ -145,12 +146,66 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
-		if (MatchState == MatchState::Cooldown)
+
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ElimmedCharacter);
+		if (MatchState == MatchState::Cooldown && BlasterCharacter && BlasterCharacter->GetCharacterMovement())
 		{
-			ACosmicBlasterCharacter* Character = Cast<ACosmicBlasterCharacter>(ElimmedCharacter);
-			Character->bDisableGameplay = true;
+			UE_LOG(LogTemp, Warning, TEXT("Should be disabled"));
+			// we are making it inside this IF check, so why not disabled?
+			BlasterCharacter->GetCharacterMovement()->DisableMovement();
+			BlasterCharacter->bDisableGameplay = true;
 		}
 	}
+
+
+
+	/*// Find all available player starts
+	TArray<AActor*> PlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+
+	// Define maximum number of attempts to find a suitable spawn location
+	const int32 MaxAttempts = 10;
+
+	// Loop through all player starts for a fixed number of attempts and select the first one that has no overlapping actors
+	for (int32 i = 0; i < MaxAttempts; i++)
+	{
+		// Select a random player start
+		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
+		FVector StartLocation = PlayerStarts[Selection]->GetActorLocation();
+
+		// Check for nearby players
+		TArray<FOverlapResult> Overlaps;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(ElimmedCharacter);
+		QueryParams.bTraceComplex = true;
+		GetWorld()->OverlapMultiByObjectType(
+			Overlaps,
+			StartLocation,
+			FQuat::Identity,
+			FCollisionObjectQueryParams(ECC_SkeletalMesh),
+			FCollisionShape::MakeSphere(NearbyRadius),
+			QueryParams);
+
+		UE_LOG(LogTemp, Warning, TEXT("Number of overlapping actors found: %d"), Overlaps.Num());
+
+		// If no nearby players are found, respawn at the current player start and exit the loop
+		if (Overlaps.Num() == 0)
+		{
+			RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+			UE_LOG(LogTemp, Warning, TEXT("Respawn Successful for: %s"), *ElimmedController->GetName());
+			return;
+		}
+	}
+	// If no suitable spawn location is found, use a default location or return an error
+	UE_LOG(LogTemp, Warning, TEXT("No suitable spawn location found for player %s"), *ElimmedController->GetName());
+	FRotator DefaultRotation = FRotator(0.0f, 0.0f, 0.0f);
+	RestartPlayerAtTransform(ElimmedController, FTransform(DefaultRotation, DefaultLocation));
+
+	if (MatchState == MatchState::Cooldown)
+	{
+		ACosmicBlasterCharacter* Character = Cast<ACosmicBlasterCharacter>(ElimmedCharacter);
+		Character->bDisableGameplay = true;
+	}*/
 }
 
 void ABlasterGameMode::PlayerLeftGame(ABlasterPlayerState* PlayerLeaving)

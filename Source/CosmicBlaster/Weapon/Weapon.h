@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "WeaponTypes.h"
 #include "CosmicBlaster/BlasterTypes/Team.h"
+#include "CosmicBlaster/Interfaces/InteractInterface.h"
 #include "Weapon.generated.h"
 
 class USphereComponent;
@@ -37,11 +38,13 @@ enum class EFireType : uint8
 };
 
 UCLASS()
-class COSMICBLASTER_API AWeapon : public AActor
+class COSMICBLASTER_API AWeapon : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
 public:	
+	//virtual void InteractableFound_Implementation() override;
+	void OnClearViewport();
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
