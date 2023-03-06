@@ -13,10 +13,45 @@
 #include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
 #include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+
+#include "CosmicBlaster/GameMode/BlasterGameMode.h"
 
 /*
 Initial functions
 */
+
+/*void AWeapon::InteractableFound_Implementation()
+{
+	BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	class ABlasterGameMode* GameMode = Cast<ABlasterGameMode>(GetWorld()->GetAuthGameMode());
+	BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(GameMode->DefaultPawnClass->GetDefaultObject());
+
+
+	if (PickupWidget && BlasterOwnerCharacter)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
+
+		ShowPickupWidget(true);
+
+		if (WeaponType == EWeaponType::EWT_Flag && BlasterOwnerCharacter->GetTeam() == Team) return;
+
+		if (BlasterOwnerCharacter->IsHoldingTheFlag()) return;
+
+		BlasterOwnerCharacter->SetOverlappingWeapon(this);
+	}
+
+	else return;
+}
+
+void AWeapon::OnClearViewport()
+{
+	if (PickupWidget)
+	{
+		ShowPickupWidget(false);
+	}
+	else return;
+}*/
 
 AWeapon::AWeapon()
 {

@@ -12,6 +12,7 @@
 #include "CosmicBlasterCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnClearViewport);
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -35,6 +36,15 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 	GENERATED_BODY()
 
 public:
+	//UPROPERTY(BlueprintAssignable)
+	//FOnClearViewport Clear;
+
+	//FTimerHandle InteractableTraceTimerHandle;
+
+//	void ScanForInteractables();
+	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+//	void InteractWithObject();
+
 	ACosmicBlasterCharacter();
 	void SpawnDefaultWeapon();
 	bool bFinishedSwapping = false;
@@ -168,8 +178,8 @@ public:
 
 	void PlayMacerena(bool bPlayMacerena);
 
-	void PlayFireworks();
-	void PlayFireworkSound();
+	void PlayFireworks(const TArray<ABlasterPlayerState*>& Players);
+	void PlayFireworkSound(const TArray<ABlasterPlayerState*>& Players);
 
 protected:
 	virtual void BeginPlay() override;
