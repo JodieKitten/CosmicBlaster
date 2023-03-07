@@ -903,9 +903,6 @@ void ACosmicBlasterCharacter::SetHoldingTheFlag(bool bHolding)
 bool ACosmicBlasterCharacter::ShouldPlayMacerenaMontage()
 {
 	return bShouldPlayMacerena;
-
-	/*if (BlasterPlayerController == nullptr) return false;
-	return BlasterPlayerController->bPlayMacerena;*/
 }
 
 /*
@@ -1042,7 +1039,8 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 
 	UpdateHUDHealth();
 	UpdateHUDShield();
-	
+	PlayHitReactMontage();
+
 	/*UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
 	{
@@ -1052,7 +1050,7 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
 	{
 		Combat->FinishedSwap();
-		PlayHitReactMontage();
+		
 	}*/
 
 	if (Health == 0.f)
@@ -1199,6 +1197,7 @@ void ACosmicBlasterCharacter::ElimTimerFinished()
 	if (BlasterGameMode && !bLeftGame)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+
 		if (BlasterPlayerController)
 		{
 			BlasterPlayerController->ClearElimText();
@@ -1325,7 +1324,9 @@ void ACosmicBlasterCharacter::ServerLeaveGame_Implementation()
 	}
 }
 
-/* Macerena */
+/*
+Macerena
+*/
 
 void ACosmicBlasterCharacter::OnRep_PlayMacerena()
 {
@@ -1341,6 +1342,14 @@ void ACosmicBlasterCharacter::ServerPlayMacerena_Implementation(bool bPlayMacere
 	{
 		Combat->EquippedWeapon->Destroy();
 	}
+	if (Combat && Combat->bHoldingTheFlag)
+	{
+		Combat->TheFlag->Destroy();
+	}
+	if (Combat)
+	{
+		Combat->ShowAttachedGrenade(false);
+	}
 }
 
 void ACosmicBlasterCharacter::PlayMacerena(bool bPlayMacerena)
@@ -1350,7 +1359,6 @@ void ACosmicBlasterCharacter::PlayMacerena(bool bPlayMacerena)
 	if (IsLocallyControlled())
 	{
 		bCooldown = bPlayMacerena;
-		//PlayMacerenaMontage();
 	}
 }
 
@@ -1392,12 +1400,29 @@ void ACosmicBlasterCharacter::PlayFireworks(const TArray<ABlasterPlayerState*>& 
 
 void ACosmicBlasterCharacter::PlayFireworkSound(const TArray<ABlasterPlayerState*>& Players)
 {
-	if (FireworkSound)
+	if (Players.Num() == 1)
 	{
-		UGameplayStatics::PlaySoundAtLocation(
-			this,
-			FireworkSound,
-			GetActorLocation()
+		if (FireworkSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				FireworkSound,
+				Players[0]->GetPawn()->GetActorLocation()
 		);
+		}
+	}
+	else if (Players.Num() > 1)
+	{
+		for (auto TiedPlayers : Players)
+		{
+			if (FireworkSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					FireworkSound,
+					TiedPlayers->GetPawn()->GetActorLocation()
+				);
+			}
+		}
 	}
 }
