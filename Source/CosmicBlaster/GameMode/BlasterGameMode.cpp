@@ -147,12 +147,13 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
 
-		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ElimmedCharacter);
-		if (MatchState == MatchState::Cooldown && BlasterCharacter && BlasterCharacter->GetCharacterMovement())
+		//have to cast to the character of the elimmed controller - not the elimmed character itself
+		ABlasterPlayerController* PlayerController = Cast<ABlasterPlayerController>(ElimmedController);
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ElimmedController->GetPawn());
+
+		if (MatchState == MatchState::Cooldown && BlasterCharacter)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Should be disabled"));
-			// we are making it inside this IF check, so why not disabled?
-			BlasterCharacter->GetCharacterMovement()->DisableMovement();
+			BlasterCharacter->PlayMacerenaMontage();
 			BlasterCharacter->bDisableGameplay = true;
 		}
 	}

@@ -282,7 +282,6 @@ void ABlasterPlayerController::OnRep_MatchState()
 void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
 	if(HasAuthority()) bShowTeamScores = bTeamsMatch;
-	//bPlayMacerena = false;
 
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
 	if (BlasterHUD)
@@ -343,6 +342,7 @@ void ABlasterPlayerController::HandleCooldown()
 	{
 		BlasterCharacter->PlayMacerenaMontage();
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
+		BlasterCharacter->bDisableGameplay = true;
 
 		ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 		TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;

@@ -82,15 +82,18 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Reloading")));
 		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Unoccupied")));
 		if (bFireButtonPressed)
 		{
 			Fire();
 		}
 		break;
 	case ECombatState::ECS_ThrowingGrenade:
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Throwing Grenade")));
 		if (Character && !Character->IsLocallyControlled())
 		{
 			Character->PlayThrowGrenadeMontage();
@@ -99,9 +102,9 @@ void UCombatComponent::OnRep_CombatState()
 		}
 		break;
 	case ECombatState::ECS_SwappingWeapons:
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Swapping Weapons")));
 		if (Character && !Character->IsLocallyControlled())
 		{
-			SwapWeapons();
 			Character->PlaySwapMontage();
 		}
 		break;
@@ -305,14 +308,9 @@ void UCombatComponent::SwapWeapons()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied || Character == nullptr) return;
 
-	// switch weapons
-	AWeapon* TempWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TempWeapon;
-
 	Character->PlaySwapMontage();
-	Character->bFinishedSwapping = false;
 	CombatState = ECombatState::ECS_SwappingWeapons;
+	Character->bFinishedSwapping = false;
 }
 
 bool UCombatComponent::ShouldSwapWeapons()
@@ -322,6 +320,11 @@ bool UCombatComponent::ShouldSwapWeapons()
 
 void UCombatComponent::FinishedSwapAttachWeapons()
 {
+	if (Character == nullptr || !Character->HasAuthority()) return;
+	AWeapon* TempWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TempWeapon;
+
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 	AttachActorToBackpack(SecondaryWeapon);
 
