@@ -9,6 +9,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/HorizontalBox.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
 
 void ABlasterHUD::BeginPlay()
 {
@@ -22,6 +23,8 @@ void ABlasterHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
+		CharacterOverlay->ScopeBackground->SetRenderOpacity(0);
+		CharacterOverlay->ScopeOverlay->SetRenderOpacity(0);
 	}
 }
 

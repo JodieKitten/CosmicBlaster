@@ -82,18 +82,18 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Reloading")));
+		UE_LOG(LogTemp, Warning, TEXT("Reloading"));
 		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Unoccupied")));
+		UE_LOG(LogTemp, Warning, TEXT("Unoccupied"));
 		if (bFireButtonPressed)
 		{
 			Fire();
 		}
 		break;
 	case ECombatState::ECS_ThrowingGrenade:
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Throwing Grenade")));
+		UE_LOG(LogTemp, Warning, TEXT("Throwing Grenade"));
 		if (Character && !Character->IsLocallyControlled())
 		{
 			Character->PlayThrowGrenadeMontage();
@@ -102,7 +102,7 @@ void UCombatComponent::OnRep_CombatState()
 		}
 		break;
 	case ECombatState::ECS_SwappingWeapons:
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan, FString::Printf(TEXT("Swapping Weapons")));
+		UE_LOG(LogTemp, Warning, TEXT("Swapping Weapons"));
 		if (Character && !Character->IsLocallyControlled())
 		{
 			Character->PlaySwapMontage();
@@ -204,7 +204,6 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		}
 
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
-
 		GetWorld()->LineTraceSingleByChannel(
 			TraceHitResult,
 			Start,
