@@ -342,7 +342,6 @@ void ABlasterPlayerController::HandleCooldown()
 	{
 		BlasterCharacter->PlayMacerenaMontage();
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
-		BlasterCharacter->bDisableGameplay = true;
 
 		ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 		TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;

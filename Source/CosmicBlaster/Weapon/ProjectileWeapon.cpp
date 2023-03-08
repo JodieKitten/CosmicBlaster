@@ -46,8 +46,9 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 					SpawnedProjectile = World->SpawnActor<AProjectile>(ServerSideRewindProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
 					if (SpawnedProjectile)
 					{
+						UE_LOG(LogTemp, Warning, TEXT("WITH TRACER SSR projectile spawned - server, not locally controlled"));
 						SpawnedProjectile->bUseServerSideRewind = true;
-						SpawnedProjectile->SetReplicates(true);
+						SpawnedProjectile->SetReplicates(true); //replicates projectile down to clients BUT also to the client that is spawning it's own local projectile - sees double
 					}
 
 				}
@@ -55,10 +56,11 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 			else //not server (client), using SSR
 			{
 				if (InstigatorPawn->IsLocallyControlled()) //client, locally controlled - spawn non-replicated projectile, use SSR
-				{
-					SpawnedProjectile = World->SpawnActor<AProjectile>(ServerSideRewindProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
+				{	//created a duplicate ssr projectile class but removed tracer etc so it's invisible so client only sees one projectile
+					SpawnedProjectile = World->SpawnActor<AProjectile>(ServerSideRewindDummyProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
 					if (SpawnedProjectile)
 					{
+						UE_LOG(LogTemp, Warning, TEXT("Dummy no tracer SSR projectile spawned - client, locally controlled"));
 						SpawnedProjectile->bUseServerSideRewind = true;
 						SpawnedProjectile->TraceStart = SocketTransform.GetLocation();
 						SpawnedProjectile->InitialVelocity = SpawnedProjectile->GetActorForwardVector() * SpawnedProjectile->InitialSpeed;

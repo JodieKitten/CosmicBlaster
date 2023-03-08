@@ -42,6 +42,7 @@ void UCosmicBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bHoldingTheFlag = BlasterCharacter->IsHoldingTheFlag();
 	bPlayMacerena = BlasterCharacter->ShouldPlayMacerenaMontage();
 	
+	//offset yaw for strafing
 	FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(BlasterCharacter->GetVelocity());
 	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
@@ -70,7 +71,8 @@ void UCosmicBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		if (BlasterCharacter->IsLocallyControlled())
 		{
 			bLocallyControlled = true;
-			FTransform RightHandTransform = BlasterCharacter->GetMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);
+			//FTransform RightHandTransform = BlasterCharacter->GetMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);
+			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"), ERelativeTransformSpace::RTS_World);
 			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - BlasterCharacter->GetHitTarget()));
 			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 0.f);
 		}

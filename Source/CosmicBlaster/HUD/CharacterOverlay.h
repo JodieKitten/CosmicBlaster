@@ -72,4 +72,10 @@ public:
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* HighPingAnimation;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* ScopeOverlay;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* ScopeBackground;
 };

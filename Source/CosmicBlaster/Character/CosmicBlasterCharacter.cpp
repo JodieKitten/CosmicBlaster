@@ -32,6 +32,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
 #include "CosmicBlaster/Interfaces/InteractInterface.h"
+#include "CosmicBlaster/HUD/BlasterHUD.h"
+#include "CosmicBlaster/HUD/CharacterOverlay.h"
 
 /*
 Initial functions
