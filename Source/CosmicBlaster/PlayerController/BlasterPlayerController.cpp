@@ -32,14 +32,19 @@ void ABlasterPlayerController::BeginPlay()
 	ServerCheckMatchState();
 }
 
-/*void ABlasterPlayerController::Interact()
+void ABlasterPlayerController::Interact()
+{
+	ServerInteract();
+}
+
+void ABlasterPlayerController::ServerInteract_Implementation()
 {
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter == nullptr) return;
 
 	BlasterCharacter->Clear.Broadcast();
 	BlasterCharacter->InteractWithObject();
-}*/
+}
 
 void ABlasterPlayerController::Tick(float DeltaTime)
 {
@@ -56,7 +61,7 @@ void ABlasterPlayerController::SetupInputComponent()
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
-	//InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
+	InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
 }
 
 void ABlasterPlayerController::ShowReturnToMainMenu()
@@ -683,12 +688,12 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
 		int32 Seconds = CountdownTime - Minutes * 60;
 		int32 FakeSeconds = CountdownTime - Minutes * 60 - 5;
 
-		if (FakeSeconds > 0)
+		if (Minutes != 0 && FakeSeconds > 0)
 		{
 			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, FakeSeconds); // %02d = 2 digits
 			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 		}
-		else if (FakeSeconds <= 0)
+		else if (Minutes == 0 && FakeSeconds <= 0)
 		{
 			FString CountdownText = FString::Printf(TEXT("00:00"));
 			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));

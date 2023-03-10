@@ -310,6 +310,19 @@ void UCombatComponent::SwapWeapons()
 	Character->PlaySwapMontage();
 	CombatState = ECombatState::ECS_SwappingWeapons;
 	Character->bFinishedSwapping = false;
+	if (Character && !Character->HasAuthority())
+	{
+		ServerSwapWeapons();
+	}
+}
+
+void UCombatComponent::ServerSwapWeapons_Implementation()
+{
+	if (CombatState != ECombatState::ECS_Unoccupied || Character == nullptr) return;
+
+	Character->PlaySwapMontage();
+	CombatState = ECombatState::ECS_SwappingWeapons;
+	Character->bFinishedSwapping = false;
 }
 
 bool UCombatComponent::ShouldSwapWeapons()

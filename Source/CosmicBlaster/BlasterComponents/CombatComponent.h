@@ -29,6 +29,10 @@ public:
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void SwapWeapons();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeapons();
+
 	bool ShouldSwapWeapons();
 	void Reload();
 

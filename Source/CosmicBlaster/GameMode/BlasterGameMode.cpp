@@ -148,7 +148,7 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
 
 		//have to cast to the character of the elimmed controller - not the elimmed character itself
-		ABlasterPlayerController* PlayerController = Cast<ABlasterPlayerController>(ElimmedController);
+		//ABlasterPlayerController* PlayerController = Cast<ABlasterPlayerController>(ElimmedController);
 		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ElimmedController->GetPawn());
 
 		if (MatchState == MatchState::Cooldown && BlasterCharacter)

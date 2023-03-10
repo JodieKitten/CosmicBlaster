@@ -27,7 +27,10 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	//void Interact();
+	void Interact();
+
+	UFUNCTION(Server, Reliable)
+	void ServerInteract();
 
 	FHighPingDelegate HighPingDelegate;
 
