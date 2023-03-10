@@ -11,6 +11,8 @@ class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 class ABlasterPlayerState;
 
+
+
 namespace MatchState
 {
 	extern COSMICBLASTER_API const FName Cooldown; // match ended, display winner and start cooldown timer
@@ -41,6 +43,8 @@ public:
 	float LevelStartingTime = 0.f;
 
 	bool bTeamsMatch = false;
+
+
 
 protected:
 	virtual void BeginPlay() override;

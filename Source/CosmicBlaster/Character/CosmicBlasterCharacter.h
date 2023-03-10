@@ -45,6 +45,16 @@ public:
 	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 //	void InteractWithObject();
 
+
+	UPROPERTY(EditAnywhere)
+		class UParticleSystem* FireworkSystem;
+
+	UPROPERTY()
+		class UParticleSystemComponent* FireworkComponent;
+
+	UPROPERTY(EditAnywhere)
+		USoundCue* FireworkSound;
+
 	ACosmicBlasterCharacter();
 	void SpawnDefaultWeapon();
 	bool bFinishedSwapping = false;
@@ -391,14 +401,7 @@ private:
 	AWeapon* StartingWeapon;
 
 
-	UPROPERTY(EditAnywhere)
-	class UParticleSystem* FireworkSystem;
 
-	UPROPERTY()
-	class UParticleSystemComponent* FireworkComponent;
-
-	UPROPERTY(EditAnywhere)
-	USoundCue* FireworkSound;
 
 
 

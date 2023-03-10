@@ -74,8 +74,5 @@ public:
 	UWidgetAnimation* HighPingAnimation;
 
 	UPROPERTY(meta = (BindWidget))
-	UImage* ScopeOverlay;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* ScopeBackground;
+	UTextBlock* GameOverText;
 };

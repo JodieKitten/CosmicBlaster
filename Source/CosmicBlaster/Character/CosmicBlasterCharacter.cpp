@@ -18,7 +18,6 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
-#include "Particles/ParticleSystemComponent.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "CosmicBlaster/BlasterComponents/BuffComponent.h"
@@ -1042,18 +1041,6 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	PlayHitReactMontage();
-
-	/*UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
-	{
-		Combat->InterruptedReloading();
-		PlayHitReactMontage();
-	}
-	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
-	{
-		Combat->FinishedSwap();
-		
-	}*/
 
 	if (Health == 0.f)
 	{
