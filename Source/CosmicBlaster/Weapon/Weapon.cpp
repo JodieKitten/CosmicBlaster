@@ -21,27 +21,30 @@
 Initial functions
 */
 
-/*void AWeapon::InteractableFound_Implementation()
+void AWeapon::InteractableFound_Implementation()
 {
-	BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	class ABlasterGameMode* GameMode = Cast<ABlasterGameMode>(GetWorld()->GetAuthGameMode());
-	BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(GameMode->DefaultPawnClass->GetDefaultObject());
+	//BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
+	TArray<AActor*> FoundCharacters;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
 
-	if (PickupWidget && BlasterOwnerCharacter)
+	for (AActor* Actor : FoundCharacters)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
+	
+		if (PickupWidget && BlasterCharacter)
+		{	
+			ShowPickupWidget(true);
 
-		ShowPickupWidget(true);
+			if (WeaponType == EWeaponType::EWT_Flag && BlasterCharacter->GetTeam() == Team) return;
 
-		if (WeaponType == EWeaponType::EWT_Flag && BlasterOwnerCharacter->GetTeam() == Team) return;
+			if (BlasterCharacter->IsHoldingTheFlag()) return;
 
-		if (BlasterOwnerCharacter->IsHoldingTheFlag()) return;
+			BlasterCharacter->SetOverlappingWeapon(this);
+		}
 
-		BlasterOwnerCharacter->SetOverlappingWeapon(this);
+		else return;
 	}
-
-	else return;
 }
 
 void AWeapon::OnClearViewport()
@@ -51,7 +54,7 @@ void AWeapon::OnClearViewport()
 		ShowPickupWidget(false);
 	}
 	else return;
-}*/
+}
 
 AWeapon::AWeapon()
 {

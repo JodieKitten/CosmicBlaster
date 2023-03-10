@@ -19,7 +19,7 @@
 #include "CosmicBlaster/HUD/ReturnToMainMenu.h"
 #include "CosmicBlaster/BlasterTypes/Announcement.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Particles/ParticleSystemComponent.h"
 #include "EnhancedInputComponent.h"
 
 
@@ -32,14 +32,19 @@ void ABlasterPlayerController::BeginPlay()
 	ServerCheckMatchState();
 }
 
-/*void ABlasterPlayerController::Interact()
+void ABlasterPlayerController::Interact()
+{
+	ServerInteract();
+}
+
+void ABlasterPlayerController::ServerInteract_Implementation()
 {
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter == nullptr) return;
 
 	BlasterCharacter->Clear.Broadcast();
 	BlasterCharacter->InteractWithObject();
-}*/
+}
 
 void ABlasterPlayerController::Tick(float DeltaTime)
 {
@@ -56,7 +61,7 @@ void ABlasterPlayerController::SetupInputComponent()
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
-	//InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
+	InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
 }
 
 void ABlasterPlayerController::ShowReturnToMainMenu()
@@ -337,20 +342,41 @@ void ABlasterPlayerController::HandleCooldown()
 		}
 	}
 
+	/*CooldownCelebration();
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	FireworkCelebration();*/
+	CooldownFunctions();
+}
+
+void ABlasterPlayerController::CooldownCelebration()
+{
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter && BlasterCharacter->GetCombat())
 	{
 		BlasterCharacter->PlayMacerenaMontage();
 		BlasterCharacter->GetCombat()->FireButtonPressed(false);
-
-		ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
-		TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;
-		for (auto Winner : TopPlayers)
-		{
-			BlasterCharacter->PlayFireworks(TopPlayers);
-			BlasterCharacter->PlayFireworkSound(TopPlayers);
-		}
+		BlasterCharacter->bDisableGameplay = true;
 	}
+}
+
+void ABlasterPlayerController::FireworkCelebration()
+{
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+	TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;
+	for (auto Winner : TopPlayers)
+	{
+		BlasterCharacter->PlayFireworks(TopPlayers);
+		BlasterCharacter->PlayFireworkSound(TopPlayers);
+	}
+}
+
+void ABlasterPlayerController::CooldownFunctions()
+{
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+	BlasterCharacter->PlayMacerenaMontage();
+	CooldownCelebration();
+	FireworkCelebration();
 }
 
 FString ABlasterPlayerController::GetInfoText(const TArray<ABlasterPlayerState*>& Players)
@@ -660,13 +686,28 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
 
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
+		int32 FakeSeconds = CountdownTime - Minutes * 60 - 5;
 
-		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds); // %02d = 2 digits
-		BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+		if (Minutes != 0 && FakeSeconds > 0)
+		{
+			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, FakeSeconds); // %02d = 2 digits
+			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+		}
+		else if (Minutes == 0 && FakeSeconds <= 0)
+		{
+			FString CountdownText = FString::Printf(TEXT("00:00"));
+			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+			BlasterHUD->CharacterOverlay->GameOverText->SetText(FText::FromString("Game Over!"));
+		}
 
 		if (BlasterHUD->CharacterOverlay->Blink && Minutes == 0 && Seconds <= 30)
 		{
 			BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->Blink);
+		}
+		if (Minutes == 0 && Seconds <= 4)
+		{
+			ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+			if(BlasterCharacter) BlasterCharacter->bDisableGameplay = true;
 		}
 	}
 }

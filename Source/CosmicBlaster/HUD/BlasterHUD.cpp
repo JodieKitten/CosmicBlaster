@@ -23,8 +23,6 @@ void ABlasterHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
-		CharacterOverlay->ScopeBackground->SetRenderOpacity(0);
-		CharacterOverlay->ScopeOverlay->SetRenderOpacity(0);
 	}
 }
 

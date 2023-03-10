@@ -19,6 +19,7 @@ class UReturnToMainMenu;
 class UCombatComponent;
 class ABlasterPlayerState;
 class ABlasterGameState;
+class ACosmicBlasterCharacter;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -26,9 +27,13 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	//void Interact();
+	void Interact();
+
+	UFUNCTION(Server, Reliable)
+	void ServerInteract();
 
 	FHighPingDelegate HighPingDelegate;
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -57,6 +62,12 @@ public:
 	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
 	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
+
+	void CooldownCelebration();
+
+	void FireworkCelebration();
+
+	void CooldownFunctions();
 
 	float SingleTripTime = 0.f;
 

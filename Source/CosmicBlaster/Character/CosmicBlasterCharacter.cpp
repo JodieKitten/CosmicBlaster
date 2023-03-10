@@ -18,7 +18,6 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
-#include "Particles/ParticleSystemComponent.h"
 #include "CosmicBlaster/PlayerState/BlasterPlayerState.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "CosmicBlaster/BlasterComponents/BuffComponent.h"
@@ -39,12 +38,12 @@
 Initial functions
 */
 
-/*void ACosmicBlasterCharacter::ScanForInteractables()
+void ACosmicBlasterCharacter::ScanForInteractables()
 {
 	FHitResult HitResult;
 
 	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 400.F);
+	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 450.F);
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TArray<AActor*> ActorsToIgnore;
@@ -74,6 +73,7 @@ Initial functions
 			if (HitResult.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
 			{
 				IInteractInterface::Execute_InteractableFound(HitResult.GetActor());
+				//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
 			}
 		}
 	}
@@ -97,7 +97,7 @@ void ACosmicBlasterCharacter::InteractWithObject()
 	FHitResult HitResult;
 
 	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 400.F);
+	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 450.F);
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TArray<AActor*> ActorsToIgnore;
@@ -132,7 +132,7 @@ void ACosmicBlasterCharacter::InteractWithObject()
 			}
 		}
 	}
-}*/
+}
 
 ACosmicBlasterCharacter::ACosmicBlasterCharacter()
 {
@@ -273,7 +273,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 	UpdateHUDHealth();
 	UpdateHUDShield();
 
-//	GetWorldTimerManager().SetTimer(InteractableTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForInteractables, 0.25f, true);
+	GetWorldTimerManager().SetTimer(InteractableTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForInteractables, 0.25f, true);
 
 	if (HasAuthority())
 	{
@@ -317,7 +317,8 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAxis("Turn", this, &ACosmicBlasterCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ACosmicBlasterCharacter::LookUp);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACosmicBlasterCharacter::Jump);
-	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ACosmicBlasterCharacter::EquipButtonPressed);
+	//PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ACosmicBlasterCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction("Swap", IE_Pressed, this, &ACosmicBlasterCharacter::SwapButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACosmicBlasterCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ACosmicBlasterCharacter::AimButtonPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ACosmicBlasterCharacter::AimButtonReleased);
@@ -721,6 +722,7 @@ void ACosmicBlasterCharacter::UpdateHUDAmmo()
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
+	
 	if (IsLocallyControlled() && OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(false);
@@ -799,15 +801,20 @@ void ACosmicBlasterCharacter::EquipButtonPressed() //for server use
 		{
 			ServerEquipButtonPressed();
 		}
+	}
+}
 
-		bool bSwap = Combat->ShouldSwapWeapons() && !HasAuthority() && Combat->CombatState == ECombatState::ECS_Unoccupied && OverlappingWeapon == nullptr;
-		if (bSwap)
-		{
-			Combat->SwapWeapons();
-			bFinishedSwapping = false;
-			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
-			PlaySwapMontage();
-		}
+void ACosmicBlasterCharacter::SwapButtonPressed()
+{
+	if (bDisableGameplay) return;
+
+	bool bSwap = Combat->ShouldSwapWeapons() && Combat->CombatState == ECombatState::ECS_Unoccupied;
+
+	if (bSwap && Combat)
+	{
+		if (Combat->bHoldingTheFlag) return;
+
+		Combat->SwapWeapons();
 	}
 }
 
@@ -817,11 +824,8 @@ void ACosmicBlasterCharacter::ServerEquipButtonPressed_Implementation() //for cl
 	{
 		if (OverlappingWeapon)
 		{
+			//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
 			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else if (Combat->ShouldSwapWeapons())
-		{
-			Combat->SwapWeapons();
 		}
 	}
 } 
@@ -905,6 +909,11 @@ void ACosmicBlasterCharacter::SetHoldingTheFlag(bool bHolding)
 bool ACosmicBlasterCharacter::ShouldPlayMacerenaMontage()
 {
 	return bShouldPlayMacerena;
+}
+
+ACosmicBlasterCharacter* ACosmicBlasterCharacter::GetCharacter()
+{
+	return (ACosmicBlasterCharacter*)this;
 }
 
 /*
@@ -1042,18 +1051,6 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	PlayHitReactMontage();
-
-	/*UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AnimInstance->Montage_IsPlaying(ReloadMontage))
-	{
-		Combat->InterruptedReloading();
-		PlayHitReactMontage();
-	}
-	if (AnimInstance && AnimInstance->Montage_IsPlaying(SwapMontage))
-	{
-		Combat->FinishedSwap();
-		
-	}*/
 
 	if (Health == 0.f)
 	{

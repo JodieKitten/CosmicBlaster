@@ -43,8 +43,9 @@ class COSMICBLASTER_API AWeapon : public AActor, public IInteractInterface
 	GENERATED_BODY()
 	
 public:	
-	//virtual void InteractableFound_Implementation() override;
+	virtual void InteractableFound_Implementation() override;
 	void OnClearViewport();
+
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

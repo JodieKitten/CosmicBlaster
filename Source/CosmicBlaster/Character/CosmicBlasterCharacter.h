@@ -36,14 +36,24 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 	GENERATED_BODY()
 
 public:
-	//UPROPERTY(BlueprintAssignable)
-	//FOnClearViewport Clear;
+	UPROPERTY(BlueprintAssignable)
+	FOnClearViewport Clear;
 
-	//FTimerHandle InteractableTraceTimerHandle;
+	FTimerHandle InteractableTraceTimerHandle;
 
-//	void ScanForInteractables();
-	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-//	void InteractWithObject();
+	void ScanForInteractables();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	void InteractWithObject();
+
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* FireworkSystem;
+
+	UPROPERTY()
+	class UParticleSystemComponent* FireworkComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* FireworkSound;
 
 	ACosmicBlasterCharacter();
 	void SpawnDefaultWeapon();
@@ -195,6 +205,7 @@ protected:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void EquipButtonPressed();
+	void SwapButtonPressed();
 	void CrouchButtonPressed();
 	void AimButtonPressed();
 	void AimButtonReleased();
@@ -391,14 +402,7 @@ private:
 	AWeapon* StartingWeapon;
 
 
-	UPROPERTY(EditAnywhere)
-	class UParticleSystem* FireworkSystem;
 
-	UPROPERTY()
-	class UParticleSystemComponent* FireworkComponent;
-
-	UPROPERTY(EditAnywhere)
-	USoundCue* FireworkSound;
 
 
 
@@ -433,4 +437,5 @@ public:
 	ETeam GetTeam();
 	void SetHoldingTheFlag(bool bHolding);
 	bool ShouldPlayMacerenaMontage();
+	ACosmicBlasterCharacter* GetCharacter();
 };
