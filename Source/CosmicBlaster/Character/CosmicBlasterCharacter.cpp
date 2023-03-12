@@ -61,36 +61,37 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 		TraceObjects,
 		true,
 		ActorsToIgnore,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForDuration,
 		HitResult,
 		true
 	);
-
+	
 	if (bIsInteractable)
-	{
+	{		
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetActor()->GetName());
 		if (HitResult.GetActor())
 		{
 			if (HitResult.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
 			{
-				IInteractInterface::Execute_InteractableFound(HitResult.GetActor());
+				IInteractInterface::Execute_InteractableFound(HitResult.GetActor(), this);
 				//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
 			}
-		}
+		}	
 	}
 	else
 	{
-		Clear.Broadcast();
+		SetOverlappingWeapon(nullptr);
 	}
 }
 
-void ACosmicBlasterCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+/*void ACosmicBlasterCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
 	GetWorldTimerManager().ClearAllTimersForObject(this);
 
 	UKismetSystemLibrary::QuitGame(GetWorld(), 0, EQuitPreference::Quit, false);
-}
+}*/
 
 void ACosmicBlasterCharacter::InteractWithObject()
 {
@@ -722,7 +723,6 @@ void ACosmicBlasterCharacter::UpdateHUDAmmo()
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
-	
 	if (IsLocallyControlled() && OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(false);
@@ -741,6 +741,7 @@ void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 
 void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
+
 	if (OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(true);

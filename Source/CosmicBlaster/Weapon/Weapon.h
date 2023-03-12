@@ -43,8 +43,7 @@ class COSMICBLASTER_API AWeapon : public AActor, public IInteractInterface
 	GENERATED_BODY()
 	
 public:	
-	virtual void InteractableFound_Implementation() override;
-	void OnClearViewport();
+	virtual void InteractableFound_Implementation(ACosmicBlasterCharacter* OverlappingPlayer) override;
 
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
