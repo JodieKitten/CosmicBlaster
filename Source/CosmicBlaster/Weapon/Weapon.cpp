@@ -21,39 +21,18 @@
 Initial functions
 */
 
-void AWeapon::InteractableFound_Implementation()
+void AWeapon::InteractableFound_Implementation(ACosmicBlasterCharacter* OverlappingPlayer)
 {
-	//BlasterOwnerCharacter = Cast<ACosmicBlasterCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-
-	TArray<AActor*> FoundCharacters;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
-
-	for (AActor* Actor : FoundCharacters)
+	if (PickupWidget && OverlappingPlayer)
 	{
-		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
-	
-		if (PickupWidget && BlasterCharacter)
-		{	
-			ShowPickupWidget(true);
+		if (this->ActorHasTag("Blue") && OverlappingPlayer->GetTeam() == ETeam::ET_BlueTeam) return;
+		if (this->ActorHasTag("Red") && OverlappingPlayer->GetTeam() == ETeam::ET_RedTeam) return;
+		//if (WeaponType == EWeaponType::EWT_Flag && OverlappingPlayer->GetTeam() == Team) return;
 
-			if (WeaponType == EWeaponType::EWT_Flag && BlasterCharacter->GetTeam() == Team) return;
+		if (OverlappingPlayer->IsHoldingTheFlag()) return;
 
-			if (BlasterCharacter->IsHoldingTheFlag()) return;
-
-			BlasterCharacter->SetOverlappingWeapon(this);
-		}
-
-		else return;
+		OverlappingPlayer->SetOverlappingWeapon(this);
 	}
-}
-
-void AWeapon::OnClearViewport()
-{
-	if (PickupWidget)
-	{
-		ShowPickupWidget(false);
-	}
-	else return;
 }
 
 AWeapon::AWeapon()
@@ -155,26 +134,26 @@ void AWeapon::OnRep_Owner()
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
+	/*ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
 	if (BlasterCharacter)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("on overlap"));
 		if (WeaponType == EWeaponType::EWT_Flag && BlasterCharacter->GetTeam() == Team) return;
 		if (BlasterCharacter->IsHoldingTheFlag()) return;
 		BlasterCharacter->SetOverlappingWeapon(this);
-	}
+	}*/
 }
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
+	/*ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
 	if (BlasterCharacter)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("end overlap"));
 		if (WeaponType == EWeaponType::EWT_Flag && BlasterCharacter->GetTeam() == Team) return;
 		if (BlasterCharacter->IsHoldingTheFlag()) return;
 		BlasterCharacter->SetOverlappingWeapon(nullptr);
-	}
+	}*/
 }
 
 void AWeapon::OnPingTooHigh(bool bPingTooHigh)

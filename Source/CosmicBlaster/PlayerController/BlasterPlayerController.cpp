@@ -41,8 +41,6 @@ void ABlasterPlayerController::ServerInteract_Implementation()
 {
 	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
 	if (BlasterCharacter == nullptr) return;
-
-	BlasterCharacter->Clear.Broadcast();
 	BlasterCharacter->InteractWithObject();
 }
 
@@ -173,7 +171,7 @@ void ABlasterPlayerController::PollInit()
 				if (bShowTeamScores) InitTeamScores();
 
 				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
-				if (BlasterCharacter && BlasterCharacter->GetCombat() && BlasterCharacter->GetEquippedWeapon())
+				if (BlasterCharacter && BlasterCharacter->GetCombat())
 				{
 					if (bInitializeGrenades) SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
 				}
@@ -684,30 +682,32 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
 			return;
 		}
 
-		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
-		int32 Seconds = CountdownTime - Minutes * 60;
-		int32 FakeSeconds = CountdownTime - Minutes * 60 - 5;
+		int32 Minutes = FMath::FloorToInt((CountdownTime - 5.f) / 60.f);
+		int32 Seconds = FMath::Max(0, FMath::FloorToInt((CountdownTime - 5.f) - Minutes * 60.f));
 
-		if (Minutes != 0 && FakeSeconds > 0)
-		{
-			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, FakeSeconds); // %02d = 2 digits
-			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
-		}
-		else if (Minutes == 0 && FakeSeconds <= 0)
+
+		if (Minutes == 0 && Seconds <= 0)
 		{
 			FString CountdownText = FString::Printf(TEXT("00:00"));
+
 			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 			BlasterHUD->CharacterOverlay->GameOverText->SetText(FText::FromString("Game Over!"));
+			BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->Blink);
+
+			ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
+			if (BlasterCharacter) BlasterCharacter->bDisableGameplay = true;
+
+		}
+		else if (Minutes >= 0 && Seconds >= 0)
+		{
+			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+
+			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 		}
 
 		if (BlasterHUD->CharacterOverlay->Blink && Minutes == 0 && Seconds <= 30)
 		{
 			BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->Blink);
-		}
-		if (Minutes == 0 && Seconds <= 4)
-		{
-			ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
-			if(BlasterCharacter) BlasterCharacter->bDisableGameplay = true;
 		}
 	}
 }
