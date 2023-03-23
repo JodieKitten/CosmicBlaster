@@ -16,5 +16,5 @@ class COSMICBLASTER_API ACaptureTheFlagGameMode : public ATeamsGameMode
 	
 public:
 	virtual void PlayerEliminated(ACosmicBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController) override;
-	void FlagCaptured(AFlag* Flag, AFlagZone* Zone);
+	void FlagCaptured(class ATeamsFlag* Flag, AFlagZone* Zone);
 };

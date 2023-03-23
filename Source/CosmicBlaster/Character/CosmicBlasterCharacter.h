@@ -41,6 +41,8 @@ public:
 	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void InteractWithObject();
 
+	UPROPERTY()
+	class ATeamsFlag* Flag;
 
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* FireworkSystem;
@@ -134,6 +136,7 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayElimMontage();
 	void PlayReloadMontage();
+
 	void PlayThrowGrenadeMontage();
 	void PlaySwapMontage();
 	void PlayMacerenaMontage();

@@ -10,6 +10,7 @@
 #include "WeaponTypes.h"
 #include "CosmicBlaster/BlasterComponents/LagCompensationComponent.h"
 #include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
+#include "DrawDebugHelpers.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -83,6 +84,8 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 	{
 		FVector End = TraceStart + (HitTarget - TraceStart) * 1.25f;
 		World->LineTraceSingleByChannel(OutHit, TraceStart, End, ECollisionChannel::ECC_Visibility);
+
+		if (OutHit.bBlockingHit) End = OutHit.ImpactPoint;
 
 		FVector BeamEnd = End;
 		if (OutHit.bBlockingHit)

@@ -2,7 +2,7 @@
 
 
 #include "Weapon.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
 #include "Net/UnrealNetwork.h"
@@ -14,7 +14,7 @@
 #include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "Flag.h"
 #include "CosmicBlaster/GameMode/BlasterGameMode.h"
 
 /*
@@ -25,9 +25,8 @@ void AWeapon::InteractableFound_Implementation(ACosmicBlasterCharacter* Overlapp
 {
 	if (PickupWidget && OverlappingPlayer)
 	{
-		if (this->ActorHasTag("Blue") && OverlappingPlayer->GetTeam() == ETeam::ET_BlueTeam) return;
-		if (this->ActorHasTag("Red") && OverlappingPlayer->GetTeam() == ETeam::ET_RedTeam) return;
-		//if (WeaponType == EWeaponType::EWT_Flag && OverlappingPlayer->GetTeam() == Team) return;
+		if (this->ActorHasTag("Blue")) return;
+		if (this->ActorHasTag("Red")) return;
 
 		if (OverlappingPlayer->IsHoldingTheFlag()) return;
 
@@ -46,17 +45,19 @@ AWeapon::AWeapon()
 
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
 	WeaponMesh->MarkRenderStateDirty(); // force refresh
 	EnableCustomDepth(true);
 
-	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
-	AreaSphere->SetupAttachment(RootComponent);
-	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	AreaSphere->SetVisibility(false);
+	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision"));
+	BoxCollision->SetupAttachment(RootComponent);
+	BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	BoxCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	BoxCollision->SetVisibility(false);
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
@@ -76,15 +77,6 @@ void AWeapon::BeginPlay()
 	{
 		PickupWidget->SetVisibility(false);
 	}
-
-	if (HasAuthority())
-	{
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
-		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
-	}
-
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -215,7 +207,8 @@ void AWeapon::OnRep_WeaponState()
 void AWeapon::OnEquipped()
 {
 	ShowPickupWidget(false);
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -241,7 +234,8 @@ void AWeapon::OnEquipped()
 void AWeapon::OnEquippedSecondary()
 {
 	ShowPickupWidget(false);
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -267,7 +261,9 @@ void AWeapon::OnDropped()
 {
 	if (HasAuthority())
 	{
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		BoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		BoxCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	}
 	WeaponMesh->SetSimulatePhysics(true);
 	WeaponMesh->SetEnableGravity(true);

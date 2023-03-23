@@ -47,7 +47,7 @@ void ULagCompensationComponent::SaveFramePackage()
 		SaveFramePackage(ThisFrame);
 		FrameHistory.AddHead(ThisFrame);
 
-		// ShowFramePackage(ThisFrame, FColor::Red);
+		//ShowFramePackage(ThisFrame, FColor::Red);
 	}
 }
 
@@ -335,6 +335,9 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("Head")];
 		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+		UBoxComponent* BlanketBox = Frame.Character->HitCollisionBoxes[FName("Blanket")];
+		BlanketBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		BlanketBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Ignore);
 	}
 
 	UWorld* World = GetWorld();
@@ -342,15 +345,24 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 	for (auto& HitLocation : HitLocations)
 	{
 		FHitResult ConfirmHitResult;
-		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
-		
+		FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
 		if (World)
 		{
 			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_HitBox);
+			if (ConfirmHitResult.bBlockingHit) TraceEnd = ConfirmHitResult.ImpactPoint;
 
 			ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ConfirmHitResult.GetActor());
 			if (BlasterCharacter)
 			{
+				if (ConfirmHitResult.Component.IsValid())
+				{
+					UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+					if (Box)
+					{
+						DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Red, false, 8.f);
+					}
+				}
+
 				if (ShotgunResult.HeadShots.Contains(BlasterCharacter))
 				{
 					ShotgunResult.HeadShots[BlasterCharacter]++; //adds a hit is hitting same character
@@ -359,6 +371,7 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 				{
 					ShotgunResult.HeadShots.Emplace(BlasterCharacter, 1); // adds a hit if new character, then adds to the TMap
 				}
+
 			}
 		}
 	}
@@ -374,24 +387,39 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 			}
 		}
+
 		//disable head collision so dont get multiple hits
 		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("Head")];
 		HeadBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Ignore);
+		UBoxComponent* BlanketBox = Frame.Character->HitCollisionBoxes[FName("Blanket")];
+		BlanketBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		BlanketBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Ignore);
 	}
 
 	//check for body shots
 	for (auto& HitLocation : HitLocations)
 	{
 		FHitResult ConfirmHitResult;
-		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+		FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
 
 		if (World)
 		{
 			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_HitBox);
+			if (ConfirmHitResult.bBlockingHit) TraceEnd = ConfirmHitResult.ImpactPoint;
 
 			ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(ConfirmHitResult.GetActor());
 			if (BlasterCharacter)
 			{
+				if (ConfirmHitResult.Component.IsValid())
+				{
+					UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+					if (Box)
+					{
+						DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, 8.f);
+					}
+				}
+
 				if (ShotgunResult.BodyShots.Contains(BlasterCharacter))
 				{
 					ShotgunResult.BodyShots[BlasterCharacter]++; //adds a hit is hitting same character
@@ -497,16 +525,15 @@ void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const T
 	for (auto& HitCharacter : HitCharacters)
 	{
 		if (HitCharacter == nullptr || HitCharacter->GetEquippedWeapon() == nullptr || Character == nullptr) continue; //skips to next iteration of the FOR loop
-		float TotalDamage =0.f;
+		float TotalDamage = 0.f;
 		if (Confirm.HeadShots.Contains(HitCharacter))
 		{
-			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetHeadShotDamage();
+			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetSSRHeadShotDamage();
 			TotalDamage += HeadShotDamage;
-
 		}
 		if (Confirm.BodyShots.Contains(HitCharacter))
 		{
-			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
+			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetSSRDamage();
 			TotalDamage += BodyShotDamage;
 		}
 

@@ -17,6 +17,7 @@
 #include "CosmicBlaster/Weapon/Projectile.h"
 #include "CosmicBlaster/Weapon/Shotgun.h"
 #include "CosmicBlaster/Weapon/Flag.h"
+#include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
 /*
 Initial functions
@@ -75,6 +76,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, Grenades);
 	DOREPLIFETIME(UCombatComponent, bHoldingTheFlag);
 	DOREPLIFETIME(UCombatComponent, TheFlag);
+	DOREPLIFETIME(UCombatComponent, bLocallyReloading);
 }
 
 void UCombatComponent::OnRep_CombatState()
@@ -82,18 +84,15 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		UE_LOG(LogTemp, Warning, TEXT("Reloading"));
 		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
-		UE_LOG(LogTemp, Warning, TEXT("Unoccupied"));
 		if (bFireButtonPressed)
 		{
 			Fire();
 		}
 		break;
 	case ECombatState::ECS_ThrowingGrenade:
-		UE_LOG(LogTemp, Warning, TEXT("Throwing Grenade"));
 		if (Character && !Character->IsLocallyControlled())
 		{
 			Character->PlayThrowGrenadeMontage();
@@ -102,7 +101,6 @@ void UCombatComponent::OnRep_CombatState()
 		}
 		break;
 	case ECombatState::ECS_SwappingWeapons:
-		UE_LOG(LogTemp, Warning, TEXT("Swapping Weapons"));
 		if (Character && !Character->IsLocallyControlled())
 		{
 			Character->PlaySwapMontage();
@@ -279,13 +277,16 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
-		TheFlag = Cast<AFlag>(WeaponToEquip);
-		Character->Crouch();
-		bHoldingTheFlag = true;
-		TheFlag->ResetFlag();
+		/*TheFlag = Cast<AFlag>(WeaponToEquip);
+		TheFlag->SetOwner(Character);
 		TheFlag->SetWeaponState(EWeaponState::EWS_Equipped);
 		AttachFlagToLeftHand(TheFlag);
-		TheFlag->SetOwner(Character);
+
+		Character->Crouch();
+		bHoldingTheFlag = true;
+		TheFlag->ResetFlag();*/
+
+		//EquipFlag(WeaponToEquip);
 	}
 	else
 	{
@@ -386,6 +387,16 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	PlayEquipWeaponSound(WeaponToEquip);
 }
 
+void UCombatComponent::EquipFlag(class ATeamsFlag* FlagToEquip)
+{
+	if (FlagToEquip == nullptr) return;
+	EquippedFlag = FlagToEquip;
+	EquippedFlag->SetFlagStateOD(EFlagState::EFS_Equipped);
+	AttachFlagToBackpack(EquippedFlag);
+	EquippedFlag->SetOwner(Character);
+	EquippedFlag->GetFlagMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+}
+
 void UCombatComponent::OnRep_EquippedWeapon()
 {
 	if (EquippedWeapon && Character)
@@ -449,10 +460,29 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 void UCombatComponent::AttachFlagToLeftHand(AFlag* Flag)
 {
 	if (Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
-	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
-	if (HandSocket)
+	const USkeletalMeshSocket* FlagSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
+	if (FlagSocket)
 	{
-		HandSocket->AttachActor(Flag, Character->GetMesh());
+		FlagSocket->AttachActor(TheFlag, Character->GetMesh());
+	}
+}
+
+void UCombatComponent::AttachFlagToBackpack(AActor* ActorToAttach)
+{
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
+	const USkeletalMeshSocket* BackPackSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
+	if (BackPackSocket)
+	{
+		BackPackSocket->AttachActor(ActorToAttach, Character->GetMesh());
+	}
+}
+
+void UCombatComponent::OnRep_EquippedFlag()
+{
+	if (EquippedFlag && Character)
+	{
+		EquippedFlag->SetFlagState(EFlagState::EFS_Equipped);
+		AttachFlagToBackpack(EquippedFlag);
 	}
 }
 
@@ -867,11 +897,15 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull() && !bLocallyReloading)
+	bool bCanReload = CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull() && !bLocallyReloading;
+	if (bCanReload)
 	{
 		ServerReload();
 		HandleReload();
 		bLocallyReloading = true;
+
+		FTimerHandle ReloadStuckTimer;
+		GetWorld()->GetTimerManager().SetTimer(ReloadStuckTimer, this, &UCombatComponent::DoubleCheckReloadingStateChange, 5.f, false);
 	}
 }
 
@@ -880,7 +914,8 @@ void UCombatComponent::ServerReload_Implementation()
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 
 	CombatState = ECombatState::ECS_Reloading;
-	if(!Character->IsLocallyControlled()) HandleReload();
+	if (!Character->IsLocallyControlled()) HandleReload();
+	
 }
 
 void UCombatComponent::HandleReload()
@@ -888,6 +923,17 @@ void UCombatComponent::HandleReload()
 	if (Character)
 	{
 		Character->PlayReloadMontage();
+	}
+}
+
+void UCombatComponent::OnRep_HandleReload()
+{
+	if (EquippedWeapon->IsEmpty())
+	{
+		if (Character)
+		{
+			Character->PlayReloadMontage();
+		}
 	}
 }
 
@@ -911,6 +957,15 @@ void UCombatComponent::ReloadEmptyWeapon()
 	if (EquippedWeapon && EquippedWeapon->IsEmpty())
 	{
 		Reload();
+	}
+}
+
+void UCombatComponent::DoubleCheckReloadingStateChange()
+{
+	if (bLocallyReloading && CombatState == ECombatState::ECS_Reloading)
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+		bLocallyReloading = false;
 	}
 }
 
@@ -972,7 +1027,6 @@ void UCombatComponent::PickupAmmo(EWeaponType WeaponTypes, int32 AmmoAmount)
 	{
 		CarriedAmmoMap[WeaponTypes] = FMath::Clamp(CarriedAmmoMap[WeaponTypes] + AmmoAmount, 0, MaxCarriedAmmo);
 		UpdateCarriedAmmo();
-
 	}
 	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponTypes)
 	{

@@ -40,7 +40,6 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			if (BlasterCharacter)
 			{
 				const bool bHeadShot = FireHit.BoneName.ToString() == FString("Head");
-
 				if (bHeadShot)
 				{
 					if (HeadShotHitMap.Contains(BlasterCharacter))	HeadShotHitMap[BlasterCharacter]++; //adds a hit is hitting same character
