@@ -3,9 +3,11 @@
 
 #include "Flag.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
+#include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 
 AFlag::AFlag()
 {
@@ -15,8 +17,16 @@ AFlag::AFlag()
 
 	FlagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Flag Mesh"));
 	SetRootComponent(FlagMesh);
-	GetAreaSphere()->SetupAttachment(FlagMesh);
+
+	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Overlap Sphere"));
+	OverlapSphere->SetupAttachment(RootComponent);
+	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	OverlapSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	GetBoxCollision()->SetupAttachment(FlagMesh);
 	GetPickupWidget()->SetupAttachment(FlagMesh);
+
 	FlagMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
@@ -51,15 +61,20 @@ void AFlag::ResetFlag()
 	FlagMesh->DetachFromComponent(DetachRules);
 
 	SetWeaponState(EWeaponState::EWS_Initial);
-	GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetAreaSphere()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	OverlapSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	GetBoxCollision()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetBoxCollision()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	GetBoxCollision()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
 	SetOwner(nullptr);
 	BlasterOwnerCharacter = nullptr;
 	BlasterOwnerController = nullptr;
+
 	SetActorTransform(InitialTransform);
-
-
 }
 
 void AFlag::BeginPlay()
@@ -67,16 +82,25 @@ void AFlag::BeginPlay()
 	Super::BeginPlay();
 
 	InitialTransform = GetActorTransform();
+	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &AFlag::OnSphereOverlap);
 }
 
 void AFlag::OnEquipped()
 {
 	ShowPickupWidget(false);
-	GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	GetBoxCollision()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetBoxCollision()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
 	FlagMesh->SetSimulatePhysics(false);
 	FlagMesh->SetEnableGravity(false);
 	FlagMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	FlagMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	FlagMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+
 	EnableCustomDepth(false);
 }
 
@@ -84,15 +108,33 @@ void AFlag::OnDropped()
 {
 	if (HasAuthority())
 	{
-		GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		GetBoxCollision()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		OverlapSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	}
 	FlagMesh->SetSimulatePhysics(true);
 	FlagMesh->SetEnableGravity(true);
 	FlagMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	FlagMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	FlagMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	FlagMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	FlagMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
 	FlagMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
+}
+
+void AFlag::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(OtherActor);
+	if (BlasterCharacter && BlasterCharacter->GetCombat())
+	{
+		if (this->ActorHasTag("Blue") && BlasterCharacter->GetTeam() == ETeam::ET_BlueTeam) return;
+		if (this->ActorHasTag("Red") && BlasterCharacter->GetTeam() == ETeam::ET_RedTeam) return;
+		if (BlasterCharacter->IsHoldingTheFlag()) return;
+		//BlasterCharacter->GetCombat()->EquipFlag(this);
+	}
+}
+
+void AFlag::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+
 }

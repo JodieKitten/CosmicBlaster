@@ -66,7 +66,17 @@ public:
 
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
+	UPROPERTY(ReplicatedUsing = OnRep_HandleReload)
 	bool bLocallyReloading = false;
+
+	void EquipFlag(class ATeamsFlag* FlagToEquip);
+	void AttachFlagToBackpack(AActor* ActorToAttach);
+	
+	UFUNCTION()
+	void OnRep_EquippedFlag();
+
+	UPROPERTY(ReplicatedUsing = OnRep_EquippedFlag)
+	class ATeamsFlag* EquippedFlag;
 
 protected:
 	virtual void BeginPlay() override;	
@@ -75,11 +85,15 @@ protected:
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 
+
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
 	UFUNCTION()
 	void OnRep_SecondaryWeapon();
+
+	/*UFUNCTION()
+	void OnRep_EquipFlag();*/
 
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
@@ -130,8 +144,16 @@ protected:
 	void ServerReload();
 
 	void HandleReload();
+
+	UFUNCTION()
+	void OnRep_HandleReload();
+
 	int32 AmountToReload();
 	void ReloadEmptyWeapon();
+
+	UFUNCTION()
+	void DoubleCheckReloadingStateChange();
+
 
 	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);

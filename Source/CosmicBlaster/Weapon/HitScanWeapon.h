@@ -26,10 +26,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	USoundCue* HitSound;
 
-
-private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;
+
+private:
+
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* MuzzleFlash;

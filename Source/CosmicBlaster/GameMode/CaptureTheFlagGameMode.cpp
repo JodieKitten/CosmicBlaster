@@ -5,13 +5,14 @@
 #include "CosmicBlaster/Weapon/Flag.h"
 #include "CosmicBlaster/CaptureTheFlag/FlagZone.h"
 #include "CosmicBlaster/GameState/BlasterGameState.h"
+#include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
 void ACaptureTheFlagGameMode::PlayerEliminated(ACosmicBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
 {
 	ABlasterGameMode::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
 }
 
-void ACaptureTheFlagGameMode::FlagCaptured(AFlag* Flag, AFlagZone* Zone)
+void ACaptureTheFlagGameMode::FlagCaptured(ATeamsFlag* Flag, AFlagZone* Zone)
 {
 	bool bValidCapture = Flag->GetTeam() != Zone->Team;
 	ABlasterGameState* BGameState = Cast<ABlasterGameState>(GameState);

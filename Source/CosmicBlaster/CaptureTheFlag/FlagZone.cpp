@@ -3,8 +3,8 @@
 
 #include "FlagZone.h"
 #include "Components/SphereComponent.h"
-#include "CosmicBlaster/Weapon/Flag.h"
 #include "CosmicBlaster/GameMode/CaptureTheFlagGameMode.h"
+#include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
 AFlagZone::AFlagZone()
 {
@@ -23,7 +23,7 @@ void AFlagZone::BeginPlay()
 
 void AFlagZone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AFlag* OverlappingFlag = Cast<AFlag>(OtherActor);
+	ATeamsFlag* OverlappingFlag = Cast<ATeamsFlag>(OtherActor);
 	if (OverlappingFlag && OverlappingFlag->GetTeam() != Team)
 	{
 		ACaptureTheFlagGameMode* GameMode = GetWorld()->GetAuthGameMode<ACaptureTheFlagGameMode>();
@@ -32,7 +32,8 @@ void AFlagZone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 			GameMode->FlagCaptured(OverlappingFlag, this);
 		}
 
-		OverlappingFlag->ResetFlag();
+		OverlappingFlag->ServerDetachfromBackpack();
+		OverlappingFlag->MulticastFlagRespawn();
 	}
 }
 

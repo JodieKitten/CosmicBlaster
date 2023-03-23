@@ -94,7 +94,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetCompressedPing() * 4);
+			//UE_LOG(LogTemp, Warning, TEXT("%d"), PlayerState->GetCompressedPing() * 4);
 			if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold) //ping is compressed so is = to 1/4, so need to times by 4 for accuracy
 			{
 				HighPingWarning();
@@ -340,9 +340,6 @@ void ABlasterPlayerController::HandleCooldown()
 		}
 	}
 
-	/*CooldownCelebration();
-	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
-	FireworkCelebration();*/
 	CooldownFunctions();
 }
 

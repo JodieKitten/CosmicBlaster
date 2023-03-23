@@ -33,6 +33,7 @@
 #include "CosmicBlaster/Interfaces/InteractInterface.h"
 #include "CosmicBlaster/HUD/BlasterHUD.h"
 #include "CosmicBlaster/HUD/CharacterOverlay.h"
+#include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
 /*
 Initial functions
@@ -47,6 +48,14 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TArray<AActor*> ActorsToIgnore;
+	TArray<AActor*> FoundCharacters;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
+
+	for (AActor* Actor : FoundCharacters)
+	{
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
+		ActorsToIgnore.Add(BlasterCharacter);
+	}
 	ActorsToIgnore.Add(this);
 	ActorsToIgnore.Add(Combat->EquippedWeapon);
 	ActorsToIgnore.Add(Combat->SecondaryWeapon);
@@ -61,20 +70,24 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 		TraceObjects,
 		true,
 		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		HitResult,
 		true
 	);
 	
 	if (bIsInteractable)
-	{		
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetActor()->GetName());
+	{			
 		if (HitResult.GetActor())
 		{
 			if (HitResult.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
 			{
+				UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetComponent()->GetName());
 				IInteractInterface::Execute_InteractableFound(HitResult.GetActor(), this);
 				//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
+			}
+			else
+			{
+				SetOverlappingWeapon(nullptr);
 			}
 		}	
 	}
@@ -102,7 +115,14 @@ void ACosmicBlasterCharacter::InteractWithObject()
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TArray<AActor*> ActorsToIgnore;
+	TArray<AActor*> FoundCharacters;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
 
+	for (AActor* Actor : FoundCharacters)
+	{
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
+		ActorsToIgnore.Add(BlasterCharacter);
+	}
 	ActorsToIgnore.Add(this);
 	ActorsToIgnore.Add(Combat->EquippedWeapon);
 	ActorsToIgnore.Add(Combat->SecondaryWeapon);
@@ -1234,9 +1254,9 @@ void ACosmicBlasterCharacter::DropOrDestroyWeapons()
 		{
 			DropOrDestroyWeapon(Combat->SecondaryWeapon);
 		}
-		if (Combat->TheFlag)
+		if (Combat->EquippedFlag)
 		{
-			Combat->TheFlag->Dropped();
+			Combat->EquippedFlag->ServerDetachfromBackpack();
 		}
 	}
 }
@@ -1342,10 +1362,10 @@ void ACosmicBlasterCharacter::ServerPlayMacerena_Implementation(bool bPlayMacere
 	{
 		Combat->EquippedWeapon->Destroy();
 	}
-	if (Combat && Combat->bHoldingTheFlag)
+	/*if (Combat && Combat->EquippedFlag)
 	{
-		Combat->TheFlag->Destroy();
-	}
+		Combat->EquippedFlag->ServerDetachfromBackpack();
+	}*/
 	if (Combat)
 	{
 		Combat->ShowAttachedGrenade(false);

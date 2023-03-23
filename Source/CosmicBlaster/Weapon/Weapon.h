@@ -9,7 +9,7 @@
 #include "CosmicBlaster/Interfaces/InteractInterface.h"
 #include "Weapon.generated.h"
 
-class USphereComponent;
+class UBoxComponent;
 class UWidgetComponent;
 class UAnimationAsset;
 class UTexture2D;
@@ -138,6 +138,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float HeadShotDamage = 40.f;
 
+	UPROPERTY(EditAnywhere)
+	float SSRDamage = 8.f;
+
+	UPROPERTY(EditAnywhere)
+	float SSRHeadShotDamage = 10.f;
+
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
 
@@ -159,7 +165,7 @@ private:
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	USphereComponent* AreaSphere;
+	UBoxComponent* BoxCollision;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UWidgetComponent* PickupWidget;
@@ -206,7 +212,7 @@ private:
 
 public:
 	void SetWeaponState(EWeaponState State);
-	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
+	FORCEINLINE UBoxComponent* GetBoxCollision() const { return BoxCollision; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
@@ -216,5 +222,7 @@ public:
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
+	FORCEINLINE float GetSSRDamage() const { return SSRDamage; }
+	FORCEINLINE float GetSSRHeadShotDamage() const { return SSRHeadShotDamage; }
 	FORCEINLINE ETeam GetTeam() const { return Team; }
 };

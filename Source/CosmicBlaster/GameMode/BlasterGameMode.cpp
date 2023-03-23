@@ -154,12 +154,6 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		if (MatchState == MatchState::Cooldown && BlasterCharacter)
 		{
 			BlasterCharacter->bDisableGameplay = true;
-
-			/*BlasterCharacter->PlayMacerenaMontage();
-			PlayerController->CooldownCelebration();
-			PlayerController->FireworkCelebration();
-
-			PlayerController->CooldownFunctions();*/
 		}
 	}
 

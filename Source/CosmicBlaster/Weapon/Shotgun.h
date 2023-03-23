@@ -18,6 +18,6 @@ public:
 	void ShotgunTraceEndWithScatter(const FVector& HitTarget, TArray<FVector_NetQuantize>& HitTargets);
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Weapom Scatter")
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	uint32 NumberOfPellets = 10;
 };
