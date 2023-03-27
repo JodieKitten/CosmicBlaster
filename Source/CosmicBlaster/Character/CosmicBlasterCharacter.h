@@ -36,8 +36,15 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 
 public:
 	FTimerHandle InteractableTraceTimerHandle;
+	FTimerHandle CharacterTraceTimerHandle;
+
 
 	void ScanForInteractables();
+	void ScanForCharacter();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowOverheadWidget(bool bShowOverheadWidget, ACosmicBlasterCharacter* FoundCharacter);
+
 	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void InteractWithObject();
 

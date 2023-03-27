@@ -16,6 +16,7 @@ class UTexture2D;
 class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 class USoundCue;
+class UPickupWidget;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -157,8 +158,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere)
-	ETeam Team;
+	/*UPROPERTY(EditAnywhere)
+	ETeam Team;*/
 
 	/* Components */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -224,5 +225,5 @@ public:
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 	FORCEINLINE float GetSSRDamage() const { return SSRDamage; }
 	FORCEINLINE float GetSSRHeadShotDamage() const { return SSRHeadShotDamage; }
-	FORCEINLINE ETeam GetTeam() const { return Team; }
+	//FORCEINLINE ETeam GetTeam() const { return Team; }
 };
