@@ -27,7 +27,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				FString MatchType = Subsystem->DesiredMatchType;
 				if (MatchType == "FreeForAll")
 				{
-					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/FreeForAll?listen"));
+					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/BlasterMap?listen"));
 				}
 				else if (MatchType == "Teams")
 				{

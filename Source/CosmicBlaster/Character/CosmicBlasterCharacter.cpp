@@ -97,6 +97,67 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 	}
 }
 
+void ACosmicBlasterCharacter::ScanForCharacter()
+{
+	FHitResult HitResult;
+
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 1000.F);
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
+	TArray<AActor*> ActorsToIgnore;
+
+	TArray<AActor*> FoundCharacters;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
+
+	ActorsToIgnore.Add(this);
+
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
+
+	const bool bIsInteractable = UKismetSystemLibrary::LineTraceSingleForObjects(
+		GetWorld(),
+		Start,
+		End,
+		TraceObjects,
+		true,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration,
+		HitResult,
+		true
+	);
+		if (bIsInteractable)
+		{
+			for (AActor* Actor : FoundCharacters)
+			{
+				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
+				if (HitResult.GetActor() == BlasterCharacter && HitResult.GetActor() != this)
+				{
+					ACosmicBlasterCharacter* FoundCharacter = Cast<ACosmicBlasterCharacter>(HitResult.GetActor());
+					ShowOverheadWidget(true, FoundCharacter);
+				}
+				else if (HitResult.GetActor() != BlasterCharacter && HitResult.GetActor() != this)
+				{
+					ShowOverheadWidget(false, nullptr);
+				}
+			}
+
+		}
+		else
+		{
+			ShowOverheadWidget(false, nullptr);
+		}
+}
+
+/*void ACosmicBlasterCharacter::ShowOverheadWidget(bool bShowOverheadWidget)
+{
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetVisibility(bShowOverheadWidget);
+	}
+}*/
+
 /*void ACosmicBlasterCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
@@ -295,6 +356,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 	UpdateHUDShield();
 
 	GetWorldTimerManager().SetTimer(InteractableTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForInteractables, 0.25f, true);
+	GetWorldTimerManager().SetTimer(CharacterTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForCharacter, 0.25f, true);
 
 	if (HasAuthority())
 	{
@@ -1050,7 +1112,9 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 {
 	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
 	if (bElimmed || BlasterGameMode == nullptr) return;
+
 	Damage = BlasterGameMode->CalculateDamage(InstigatorController, Controller, Damage);
+
 
 	float DamageToHealth = Damage;
 	if (Shield > 0.f)
