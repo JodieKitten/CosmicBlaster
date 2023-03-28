@@ -26,6 +26,7 @@ public:
 	UCombatComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void SwapWeapons();
@@ -35,6 +36,8 @@ public:
 
 	bool ShouldSwapWeapons();
 	void Reload();
+
+	void SetOverheadWidget(ACosmicBlasterCharacter* FoundCharacter);
 
 	UFUNCTION(BlueprintCallable)
 	void FinishedReloading();
@@ -157,6 +160,7 @@ protected:
 
 	/* HUD */
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
+	void HideOverheadWidget();
 	void SetHUDCrosshairs(float DeltaTime);
 	void UpdateCarriedAmmo();
 
