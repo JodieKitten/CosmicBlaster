@@ -7,6 +7,7 @@
 #include "OverheadWidget.generated.h"
 
 class UTextBlock;
+class ACosmicBlasterCharacter;
 
 UCLASS()
 class COSMICBLASTER_API UOverheadWidget : public UUserWidget
@@ -20,7 +21,7 @@ public:
 	void SetDisplayText(FString TextToDisplay);
 
 	UFUNCTION(BlueprintCallable)
-	void ShowPlayerName(APawn* InPawn);
+	void ShowPlayerName(ACosmicBlasterCharacter* InCharacter);
 
 	UFUNCTION(BlueprintCallable)
 	void ShowPlayerNetRole(APawn* InPawn);

@@ -25,7 +25,7 @@ Initial functions
 
 void AWeapon::InteractableFound_Implementation(ACosmicBlasterCharacter* OverlappingPlayer)
 {
-	if (PickupWidget && OverlappingPlayer)
+	if (OverlappingPlayer)
 	{
 		if (this->ActorHasTag("Blue")) return;
 		if (this->ActorHasTag("Red")) return;

@@ -34,6 +34,7 @@ void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	UpdateHUDGrenades();
+
 	if (Character)
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
@@ -211,14 +212,32 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 
 		if (!TraceHitResult.bBlockingHit) TraceHitResult.ImpactPoint = End;
 
+		ACosmicBlasterCharacter* FoundCharacter = Cast<ACosmicBlasterCharacter>(TraceHitResult.GetActor());
+
 		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairsInterface>())
 		{
+			SetOverheadWidget(FoundCharacter);
+
 			HUDPackage.CrosshairsColour = FLinearColor::Red;
 		}
 		else
 		{
+			HideOverheadWidget();
+
 			HUDPackage.CrosshairsColour = FLinearColor::White;
 		}
+	}
+}
+
+void UCombatComponent::HideOverheadWidget()
+{
+	TArray<AActor*> FoundCharacters;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
+
+	for (AActor* Actor : FoundCharacters)
+	{
+		ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
+		BlasterCharacter->HideOverheadWidget();
 	}
 }
 
@@ -264,6 +283,14 @@ void UCombatComponent::SetWeaponTypeOnHUD()
 void UCombatComponent::OnRep_Grenades()
 {
 	UpdateHUDGrenades();
+}
+
+void UCombatComponent::SetOverheadWidget(ACosmicBlasterCharacter* FoundCharacter)
+{
+	if (FoundCharacter)
+	{
+		FoundCharacter->ShowOverheadWidget(FoundCharacter, true);
+	}
 }
 
 /*

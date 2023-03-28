@@ -35,14 +35,16 @@
 #include "CosmicBlaster/HUD/CharacterOverlay.h"
 #include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
+#include "CosmicBlaster/HUD/OverheadWidget.h"
+
 /*
 Initial functions
 */
 
+
 void ACosmicBlasterCharacter::ScanForInteractables()
 {
 	FHitResult HitResult;
-
 	FVector Start = FollowCamera->GetComponentLocation();
 	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 450.F);
 
@@ -81,7 +83,6 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 		{
 			if (HitResult.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetComponent()->GetName());
 				IInteractInterface::Execute_InteractableFound(HitResult.GetActor(), this);
 				//GEngine->AddOnScreenDebugMessage(-1, 8.F, FColor::FromHex("#FFD801"), __FUNCTION__);
 			}
@@ -97,75 +98,30 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 	}
 }
 
-void ACosmicBlasterCharacter::ScanForCharacter()
-{
-	FHitResult HitResult;
-
-	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 1000.F);
-
-	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
-	TArray<AActor*> ActorsToIgnore;
-
-	TArray<AActor*> FoundCharacters;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACosmicBlasterCharacter::StaticClass(), FoundCharacters);
-
-	ActorsToIgnore.Add(this);
-
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
-
-	const bool bIsInteractable = UKismetSystemLibrary::LineTraceSingleForObjects(
-		GetWorld(),
-		Start,
-		End,
-		TraceObjects,
-		true,
-		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
-		HitResult,
-		true
-	);
-		if (bIsInteractable)
-		{
-			for (AActor* Actor : FoundCharacters)
-			{
-				ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(Actor);
-				if (HitResult.GetActor() == BlasterCharacter && HitResult.GetActor() != this)
-				{
-					ACosmicBlasterCharacter* FoundCharacter = Cast<ACosmicBlasterCharacter>(HitResult.GetActor());
-					ShowOverheadWidget(true, FoundCharacter);
-				}
-				else if (HitResult.GetActor() != BlasterCharacter && HitResult.GetActor() != this)
-				{
-					ShowOverheadWidget(false, nullptr);
-				}
-			}
-
-		}
-		else
-		{
-			ShowOverheadWidget(false, nullptr);
-		}
-}
-
-/*void ACosmicBlasterCharacter::ShowOverheadWidget(bool bShowOverheadWidget)
+void ACosmicBlasterCharacter::ShowOverheadWidget(ACosmicBlasterCharacter* FoundCharacter, bool bShowOverheadWidget)
 {
 	if (OverheadWidget)
 	{
 		OverheadWidget->SetVisibility(bShowOverheadWidget);
+
+		if (FoundCharacter)
+		{
+			UOverheadWidget* NameWidget = Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
+			if (NameWidget)
+			{
+				NameWidget->ShowPlayerName(FoundCharacter);
+			}
+		}
 	}
-}*/
+}
 
-/*void ACosmicBlasterCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ACosmicBlasterCharacter::HideOverheadWidget()
 {
-	Super::EndPlay(EndPlayReason);
-
-	GetWorldTimerManager().ClearAllTimersForObject(this);
-
-	UKismetSystemLibrary::QuitGame(GetWorld(), 0, EQuitPreference::Quit, false);
-}*/
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetVisibility(false);
+	}
+}
 
 void ACosmicBlasterCharacter::InteractWithObject()
 {
@@ -356,8 +312,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 	UpdateHUDShield();
 
 	GetWorldTimerManager().SetTimer(InteractableTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForInteractables, 0.25f, true);
-	GetWorldTimerManager().SetTimer(CharacterTraceTimerHandle, this, &ACosmicBlasterCharacter::ScanForCharacter, 0.25f, true);
-
+	
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ACosmicBlasterCharacter::ReceiveDamage);
@@ -370,6 +325,7 @@ void ACosmicBlasterCharacter::BeginPlay()
 	{
 		AttachedGrenade->SetVisibility(false);
 	}
+
 }
 
 void ACosmicBlasterCharacter::Tick(float DeltaTime)
@@ -378,6 +334,8 @@ void ACosmicBlasterCharacter::Tick(float DeltaTime)
 	HideCharacterIfCameraClose();
 	PollInit();
 	RotateInPlace(DeltaTime);
+
+	if (IsLocallyControlled()) ShowOverheadWidget(this, true);
 }
 
 void ACosmicBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

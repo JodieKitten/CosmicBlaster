@@ -4,6 +4,7 @@
 #include "OverheadWidget.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/PlayerState.h"
+#include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
 
 void UOverheadWidget::SetDisplayText(FString TextToDisplay)
 {
@@ -13,13 +14,16 @@ void UOverheadWidget::SetDisplayText(FString TextToDisplay)
 	}
 }
 
-void UOverheadWidget::ShowPlayerName(APawn* InPawn)
+void UOverheadWidget::ShowPlayerName(ACosmicBlasterCharacter* InCharacter)
 {
-	APlayerState* PlayerState = InPawn->GetPlayerState();
-	if (PlayerState)
+	if (InCharacter)
 	{
-		FString PlayerName = PlayerState->GetPlayerName();
-		SetDisplayText(PlayerName);
+		APlayerState* PlayerState = InCharacter->GetPlayerState();
+		if (PlayerState)
+		{
+			FString PlayerName = PlayerState->GetPlayerName();
+			SetDisplayText(PlayerName);
+		}
 	}
 }
 
