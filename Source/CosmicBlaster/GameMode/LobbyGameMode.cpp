@@ -31,11 +31,11 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				}
 				else if (MatchType == "Teams")
 				{
-					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/Teams?listen"));
+					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/TeamsMap?listen"));
 				}
 				else if (MatchType == "CaptureTheFlag")
 				{
-					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/CaptureTheFlag?listen"));
+					World->ServerTravel(FString("/Game/CosmicBlaster/Maps/CTF?listen"));
 				}
 			}
 		}
