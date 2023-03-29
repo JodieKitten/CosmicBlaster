@@ -176,38 +176,38 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 {
 	if (PickupWidget/*&& bShowWidget*/)
 	{
-		/*FString TracedWeaponType;
-		switch (WeaponType)
-		{
-		case EWeaponType::EWT_AssaultRifle:
-			TracedWeaponType = FString::Printf(TEXT("Assault Rifle"));
-			break;
-		case EWeaponType::EWT_GrenadeLauncher:
-			TracedWeaponType = FString::Printf(TEXT("Grenade Launcher"));
-			break;
-		case EWeaponType::EWT_Pistol:
-			TracedWeaponType = FString::Printf(TEXT("Pistol"));
-			break;
-		case EWeaponType::EWT_RocketLauncher:
-			TracedWeaponType = FString::Printf(TEXT("Rocket Launcher"));
-			break;
-		case EWeaponType::EWT_Shotgun:
-			TracedWeaponType = FString::Printf(TEXT("Shotgun"));
-			break;
-		case EWeaponType::EWT_SniperRifle:
-			TracedWeaponType = FString::Printf(TEXT("Sniper"));
-			break;
-		case EWeaponType::EWT_SubmachineGun:
-			TracedWeaponType = FString::Printf(TEXT("Submachine Gun"));
-			break;
-		}
-		PickupWidget->WeaponTypeText->SetText(FText::FromString(TracedWeaponType));
-		PickupWidget->WeaponTypeText->SetVisibility(ESlateVisibility::Visible);*/
-/* }
-	else if (PickupWidget && !bShowWidget)
-	{*/
 		PickupWidget->SetVisibility(bShowWidget);
 	}
+	/*FString TracedWeaponType;
+switch (WeaponType)
+{
+case EWeaponType::EWT_AssaultRifle:
+	TracedWeaponType = FString::Printf(TEXT("Assault Rifle"));
+	break;
+case EWeaponType::EWT_GrenadeLauncher:
+	TracedWeaponType = FString::Printf(TEXT("Grenade Launcher"));
+	break;
+case EWeaponType::EWT_Pistol:
+	TracedWeaponType = FString::Printf(TEXT("Pistol"));
+	break;
+case EWeaponType::EWT_RocketLauncher:
+	TracedWeaponType = FString::Printf(TEXT("Rocket Launcher"));
+	break;
+case EWeaponType::EWT_Shotgun:
+	TracedWeaponType = FString::Printf(TEXT("Shotgun"));
+	break;
+case EWeaponType::EWT_SniperRifle:
+	TracedWeaponType = FString::Printf(TEXT("Sniper"));
+	break;
+case EWeaponType::EWT_SubmachineGun:
+	TracedWeaponType = FString::Printf(TEXT("Submachine Gun"));
+	break;
+}
+PickupWidget->WeaponTypeText->SetText(FText::FromString(TracedWeaponType));
+PickupWidget->WeaponTypeText->SetVisibility(ESlateVisibility::Visible);*/
+	/* }
+	else if (PickupWidget && !bShowWidget)
+	{*/
 }
 
 /*
