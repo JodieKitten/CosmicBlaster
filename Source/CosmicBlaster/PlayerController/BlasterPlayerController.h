@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "EnhancedInput/Public/InputAction.h"
+#include "CosmicBlaster/BlasterTypes/InputTypes.h"
 #include "BlasterPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
@@ -27,6 +28,19 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	void DetermineInputDeviceDetails(FKey KeyPressed);
+
+	bool bIsInputDeviceGamepad = false;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Default")
+	InputType LastInputSource = InputType::Keyboard;
+
+	UFUNCTION()
+	void IA_DetectKeyboardInput(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void IA_DetectGamepadInput(const FInputActionValue& Value);
+
 	void Interact();
 
 	UFUNCTION(Server, Reliable)
@@ -70,12 +84,6 @@ public:
 	void CooldownFunctions();
 
 	float SingleTripTime = 0.f;
-
-	/*UPROPERTY(ReplicatedUsing = OnRep_PlayMacerena, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	bool bPlayMacerena;
-
-	UFUNCTION()
-	void OnRep_PlayMacerena();*/
 
 protected:
 	virtual void BeginPlay() override;

@@ -14,6 +14,8 @@ class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 class ABlasterHUD;
 class AFlag;
+class ATeamsFlag;
+class AProjectile;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class COSMICBLASTER_API UCombatComponent : public UActorComponent
@@ -72,14 +74,14 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_HandleReload)
 	bool bLocallyReloading = false;
 
-	void EquipFlag(class ATeamsFlag* FlagToEquip);
+	void EquipFlag(ATeamsFlag* FlagToEquip);
 	void AttachFlagToBackpack(AActor* ActorToAttach);
 	
 	UFUNCTION()
 	void OnRep_EquippedFlag();
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedFlag)
-	class ATeamsFlag* EquippedFlag;
+	ATeamsFlag* EquippedFlag;
 
 protected:
 	virtual void BeginPlay() override;	
@@ -139,7 +141,7 @@ protected:
 	void ServerThrowGrenade();
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectile> GrenadeClass;
+	TSubclassOf<AProjectile> GrenadeClass;
 
 	/* Reload */
 
@@ -180,17 +182,17 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
-	UPROPERTY(ReplicatedUsing = OnRep_HoldingTheFlag)
+//	UPROPERTY(ReplicatedUsing = OnRep_HoldingTheFlag)
 	bool bHoldingTheFlag = false;
 
-	UFUNCTION()
+	/*UFUNCTION()
 	void OnRep_HoldingTheFlag();
 
 	UPROPERTY(ReplicatedUsing = OnRep_TheFlag)
 	AFlag* TheFlag;
 
 	UFUNCTION()
-	void OnRep_TheFlag();
+	void OnRep_TheFlag();*/
 
 	/* Aiming / Firing */
 	bool bAimButtonPressed = false;

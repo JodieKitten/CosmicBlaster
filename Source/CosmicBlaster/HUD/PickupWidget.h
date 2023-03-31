@@ -14,5 +14,5 @@ class COSMICBLASTER_API UPickupWidget : public UUserWidget
 	
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* WeaponTypeText;
+	class UTextBlock* PickupText;
 };

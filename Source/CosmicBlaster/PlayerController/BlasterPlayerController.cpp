@@ -32,6 +32,28 @@ void ABlasterPlayerController::BeginPlay()
 	ServerCheckMatchState();
 }
 
+void ABlasterPlayerController::DetermineInputDeviceDetails(FKey KeyPressed)
+{
+	if (KeyPressed.IsGamepadKey())
+	{
+		bIsInputDeviceGamepad = true;
+	}
+	else
+	{
+		bIsInputDeviceGamepad = false;
+	}
+}
+
+void ABlasterPlayerController::IA_DetectKeyboardInput(const FInputActionValue& Value)
+{
+	LastInputSource = InputType::Keyboard;
+}
+
+void ABlasterPlayerController::IA_DetectGamepadInput(const FInputActionValue& Value)
+{
+	LastInputSource = InputType::Gamepad;
+}
+
 void ABlasterPlayerController::Interact()
 {
 	ServerInteract();
@@ -60,6 +82,8 @@ void ABlasterPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
 	InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
+	FInputActionBinding& AnyKeyBinding = InputComponent->BindAction("AnyKey", IE_Pressed, this, &ABlasterPlayerController::DetermineInputDeviceDetails);
+	AnyKeyBinding.bConsumeInput = false;
 }
 
 void ABlasterPlayerController::ShowReturnToMainMenu()
@@ -478,16 +502,6 @@ void ABlasterPlayerController::OnRep_ShowTeamScores()
 	}
 }
 
-/*void ABlasterPlayerController::OnRep_PlayMacerena()
-{
-	ACosmicBlasterCharacter* BlasterCharacter = Cast<ACosmicBlasterCharacter>(GetPawn());
-	if (bPlayMacerena && BlasterCharacter && BlasterCharacter->IsLocallyControlled())
-	{
-		BlasterCharacter->GetEquippedWeapon()->Destroy();
-		BlasterCharacter->PlayMacerenaMontage();
-	}
-}*/
-
 /*
 Set HUD
 */
@@ -726,6 +740,19 @@ void ABlasterPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds); // %02d = 2 digits
 		BlasterHUD->Announcement->WarmupTime->SetText(FText::FromString(CountdownText));
+	}
+	if (bHUDValid && BlasterHUD->Announcement->ControllerGuide && BlasterHUD->Announcement->KeyboardGuide)
+	{
+		if (bIsInputDeviceGamepad)
+		{
+			BlasterHUD->Announcement->ControllerGuide->SetVisibility(ESlateVisibility::Visible);
+			BlasterHUD->Announcement->KeyboardGuide->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			BlasterHUD->Announcement->ControllerGuide->SetVisibility(ESlateVisibility::Hidden);
+			BlasterHUD->Announcement->KeyboardGuide->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 }
 

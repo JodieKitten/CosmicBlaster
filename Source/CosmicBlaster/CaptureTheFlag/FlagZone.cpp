@@ -32,7 +32,7 @@ void AFlagZone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 			GameMode->FlagCaptured(OverlappingFlag, this);
 		}
 
-		OverlappingFlag->ServerDetachfromBackpack();
+		OverlappingFlag->DetachfromBackpack();
 		OverlappingFlag->MulticastFlagRespawn();
 	}
 }

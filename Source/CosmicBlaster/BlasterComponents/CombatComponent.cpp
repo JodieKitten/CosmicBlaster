@@ -75,9 +75,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly); // cond_Owner only = replicated to owning client only
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
-	DOREPLIFETIME(UCombatComponent, bHoldingTheFlag);
-	DOREPLIFETIME(UCombatComponent, TheFlag);
 	DOREPLIFETIME(UCombatComponent, bLocallyReloading);
+	DOREPLIFETIME(UCombatComponent, EquippedFlag);
 }
 
 void UCombatComponent::OnRep_CombatState()
@@ -414,14 +413,30 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	PlayEquipWeaponSound(WeaponToEquip);
 }
 
-void UCombatComponent::EquipFlag(class ATeamsFlag* FlagToEquip)
+void UCombatComponent::EquipFlag(ATeamsFlag* FlagToEquip)
 {
 	if (FlagToEquip == nullptr) return;
+	if (Character->bElimmed) return;
+
+	//if(Character->IsLocallyControlled()) UE_LOG(LogTemp, Warning, TEXT("shouldnt equip"));
+
 	EquippedFlag = FlagToEquip;
-	EquippedFlag->SetFlagStateOD(EFlagState::EFS_Equipped);
+	EquippedFlag->SetFlagState(EFlagState::EFS_Equipped);
 	AttachFlagToBackpack(EquippedFlag);
 	EquippedFlag->SetOwner(Character);
 	EquippedFlag->GetFlagMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	EquippedFlag->EnableCustomDepth(false);
+}
+
+void UCombatComponent::OnRep_EquippedFlag()
+{
+	if (EquippedFlag && Character)
+	{
+		EquippedFlag->SetFlagState(EFlagState::EFS_Equipped);
+		AttachFlagToBackpack(EquippedFlag);
+		EquippedFlag->EnableCustomDepth(false);
+
+	}
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
@@ -486,12 +501,12 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 
 void UCombatComponent::AttachFlagToLeftHand(AFlag* Flag)
 {
-	if (Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
+	/*if (Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
 	const USkeletalMeshSocket* FlagSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
 	if (FlagSocket)
 	{
 		FlagSocket->AttachActor(TheFlag, Character->GetMesh());
-	}
+	}*/
 }
 
 void UCombatComponent::AttachFlagToBackpack(AActor* ActorToAttach)
@@ -501,15 +516,6 @@ void UCombatComponent::AttachFlagToBackpack(AActor* ActorToAttach)
 	if (BackPackSocket)
 	{
 		BackPackSocket->AttachActor(ActorToAttach, Character->GetMesh());
-	}
-}
-
-void UCombatComponent::OnRep_EquippedFlag()
-{
-	if (EquippedFlag && Character)
-	{
-		EquippedFlag->SetFlagState(EFlagState::EFS_Equipped);
-		AttachFlagToBackpack(EquippedFlag);
 	}
 }
 
@@ -531,22 +537,6 @@ void UCombatComponent::PlayEquipWeaponSound(AWeapon* WeaponToEquip)
 	}
 }
 
-void UCombatComponent::OnRep_HoldingTheFlag()
-{
-	if (bHoldingTheFlag && Character && Character->IsLocallyControlled())
-	{
-		Character->Crouch();
-	}
-}
-
-void UCombatComponent::OnRep_TheFlag()
-{
-	if (TheFlag)
-	{
-		TheFlag->ResetFlag();
-	}
-}
-
 /*
 Aim
 */
@@ -564,7 +554,10 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	{
 		Character->ShowSniperScopeWidget(bIsAiming);
 	}
-	if (Character->IsLocallyControlled()) bAimButtonPressed = bIsAiming;
+	if (Character->IsLocallyControlled())
+	{
+		bAimButtonPressed = bIsAiming;
+	}
 }
 
 void UCombatComponent::OnRep_Aiming()

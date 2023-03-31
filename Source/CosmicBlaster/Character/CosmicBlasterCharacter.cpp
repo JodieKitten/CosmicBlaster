@@ -36,6 +36,7 @@
 #include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 
 #include "CosmicBlaster/HUD/OverheadWidget.h"
+#include "Components/SpotLightComponent.h"
 
 /*
 Initial functions
@@ -46,7 +47,7 @@ void ACosmicBlasterCharacter::ScanForInteractables()
 {
 	FHitResult HitResult;
 	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 450.F);
+	FVector End = Start + (FollowCamera->GetComponentRotation().Vector() * 500.F);
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TArray<AActor*> ActorsToIgnore;
@@ -354,11 +355,14 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACosmicBlasterCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveForwardController", this, &ACosmicBlasterCharacter::MoveForwardController);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACosmicBlasterCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("MoveRightController", this, &ACosmicBlasterCharacter::MoveRightController);
 	PlayerInputComponent->BindAxis("Turn", this, &ACosmicBlasterCharacter::Turn);
+	PlayerInputComponent->BindAxis("TurnController", this, &ACosmicBlasterCharacter::TurnController);
 	PlayerInputComponent->BindAxis("LookUp", this, &ACosmicBlasterCharacter::LookUp);
+	PlayerInputComponent->BindAxis("LookUpController", this, &ACosmicBlasterCharacter::LookUpController);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACosmicBlasterCharacter::Jump);
-	//PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ACosmicBlasterCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Swap", IE_Pressed, this, &ACosmicBlasterCharacter::SwapButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACosmicBlasterCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ACosmicBlasterCharacter::AimButtonPressed);
@@ -367,6 +371,7 @@ void ACosmicBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ACosmicBlasterCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ACosmicBlasterCharacter::ReloadButtonPressed);
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ACosmicBlasterCharacter::GrenadeButtonPressed);
+	PlayerInputComponent->BindAction("ToggleLight", IE_Pressed, this, &ACosmicBlasterCharacter::ToggleLightButtonPressed);
 }
 
 void ACosmicBlasterCharacter::PostInitializeComponents()
@@ -443,6 +448,10 @@ void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
 		{
 			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
+		if (Combat && Combat->EquippedFlag && Combat->EquippedFlag->GetFlagMesh())
+		{
+			Combat->EquippedFlag->GetFlagMesh()->bOwnerNoSee = true;
+		}
 	}
 	else
 	{
@@ -454,6 +463,10 @@ void ACosmicBlasterCharacter::HideCharacterIfCameraClose()
 		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
 		{
 			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+		if (Combat && Combat->EquippedFlag && Combat->EquippedFlag->GetFlagMesh())
+		{
+			Combat->EquippedFlag->GetFlagMesh()->bOwnerNoSee = false;
 		}
 	}
 }
@@ -520,6 +533,12 @@ void ACosmicBlasterCharacter::MoveForward(float Value)
 	}
 }
 
+void ACosmicBlasterCharacter::MoveForwardController(float Value)
+{
+	bUsingController = true;
+	MoveForward(Value);
+}
+
 void ACosmicBlasterCharacter::MoveRight(float Value)
 {
 	if (bDisableGameplay) return;
@@ -531,14 +550,61 @@ void ACosmicBlasterCharacter::MoveRight(float Value)
 	}
 }
 
+void ACosmicBlasterCharacter::MoveRightController(float Value)
+{
+	bUsingController = true;
+	MoveRight(Value);
+}
+
 void ACosmicBlasterCharacter::Turn(float Value)
 {
-	AddControllerYawInput(Value);
+	if (!Combat->bAiming)
+	{
+		AddControllerYawInput(Value);
+	}
+	else
+	{
+		AddControllerYawInput(Value / 3);
+	}
 }
 
 void ACosmicBlasterCharacter::LookUp(float Value)
+{	
+	if (!Combat->bAiming)
+	{
+		AddControllerPitchInput(Value);
+	}
+	else
+	{
+		AddControllerPitchInput(Value / 3);
+	}
+}
+
+void ACosmicBlasterCharacter::TurnController(float Value)
 {
-	AddControllerPitchInput(Value);
+	bUsingController = true;
+	if (!Combat->bAiming)
+	{
+		AddControllerYawInput(Value * 3);
+	}
+	else
+	{
+		AddControllerYawInput(Value);
+	}
+}
+
+void ACosmicBlasterCharacter::LookUpController(float Value)
+{
+	bUsingController = true;
+	if (!Combat->bAiming)
+	{
+		AddControllerPitchInput(Value * 3);
+	}
+	else
+	{
+		AddControllerPitchInput(Value);
+	}
+
 }
 
 void ACosmicBlasterCharacter::CrouchButtonPressed()
@@ -763,9 +829,10 @@ void ACosmicBlasterCharacter::UpdateHUDAmmo()
 
 void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (IsLocallyControlled() && OverlappingWeapon)
 	{
-		OverlappingWeapon->ShowPickupWidget(false);
+		OverlappingWeapon->ShowPickupWidget(false, false);
 	}
 
 	OverlappingWeapon = Weapon;
@@ -774,21 +841,37 @@ void ACosmicBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 	{
 		if (OverlappingWeapon)
 		{
-			OverlappingWeapon->ShowPickupWidget(true);
+			if (BlasterPlayerController->bIsInputDeviceGamepad)
+			{
+				OverlappingWeapon->ShowPickupWidget(true, true);
+			}
+			else
+			{
+				OverlappingWeapon->ShowPickupWidget(true, false);
+			}
+
 		}
 	}
 }
 
 void ACosmicBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
-
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (OverlappingWeapon)
 	{
-		OverlappingWeapon->ShowPickupWidget(true);
+		if (BlasterPlayerController->bIsInputDeviceGamepad)
+		{
+			OverlappingWeapon->ShowPickupWidget(true, true);
+		}
+		else
+		{
+			OverlappingWeapon->ShowPickupWidget(true, false);
+		}
+		
 	}
 	if (LastWeapon)
 	{
-		LastWeapon->ShowPickupWidget(false);
+		LastWeapon->ShowPickupWidget(false, false);
 	}
 }
 
@@ -897,6 +980,30 @@ void ACosmicBlasterCharacter::GrenadeButtonPressed()
 	{
 		if (Combat->bHoldingTheFlag) return;
 		Combat->ThrowGrenade();
+	}
+}
+
+void ACosmicBlasterCharacter::ToggleLightButtonPressed()
+{
+	if (bDisableGameplay) return;
+	if (Combat && Combat->EquippedWeapon)
+	{
+		ServerToggleLightButtonPressed();
+	}
+}
+
+void ACosmicBlasterCharacter::ServerToggleLightButtonPressed_Implementation()
+{
+	if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->SpotLight)
+	{
+		if (!Combat->EquippedWeapon->SpotLight->IsVisible())
+		{
+			Combat->EquippedWeapon->SetSpotLight(true);
+		}
+		else
+		{
+			Combat->EquippedWeapon->SetSpotLight(false);
+		}
 	}
 }
 
@@ -1149,6 +1256,8 @@ Elimination / Dissolve effect
 
 void ACosmicBlasterCharacter::Elim(APlayerController* AttackerController, bool bPlayerLeftGame)
 {
+	bElimmed = true;
+
 	FString AttackerName = FString();
 	ABlasterPlayerController* AttackerBlasterController = Cast<ABlasterPlayerController>(AttackerController);
 	if (AttackerController)
@@ -1168,6 +1277,7 @@ void ACosmicBlasterCharacter::MulticastElim_Implementation(const FString& Attack
 {
 	bLeftGame = bPlayerLeftGame;
 	bElimmed = true;
+
 	GetCharacterMovement()->DisableMovement();
 
 	if (Combat)
@@ -1278,7 +1388,7 @@ void ACosmicBlasterCharacter::DropOrDestroyWeapons()
 		}
 		if (Combat->EquippedFlag)
 		{
-			Combat->EquippedFlag->ServerDetachfromBackpack();
+			Combat->EquippedFlag->DetachfromBackpack();
 		}
 	}
 }
