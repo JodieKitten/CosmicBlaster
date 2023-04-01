@@ -32,15 +32,6 @@ public:
 
 	bool bIsInputDeviceGamepad = false;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Default")
-	InputType LastInputSource = InputType::Keyboard;
-
-	UFUNCTION()
-	void IA_DetectKeyboardInput(const FInputActionValue& Value);
-
-	UFUNCTION()
-	void IA_DetectGamepadInput(const FInputActionValue& Value);
-
 	void Interact();
 
 	UFUNCTION(Server, Reliable)
@@ -69,6 +60,10 @@ public:
 	void SetHUDBlueTeamScore(int32 BlueScore);
 	void SetHUDGrenades(int32 Grenades);
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
+	void ShowBlueFlagHUD();
+	void HideBlueFlagHUD();
+	void ShowRedFlagHUD();
+	void HideRedFlagHUD();
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
@@ -84,6 +79,18 @@ public:
 	void CooldownFunctions();
 
 	float SingleTripTime = 0.f;
+
+	UFUNCTION()
+	void OnRep_ChangeBlueFlagStatus();
+
+	UFUNCTION()
+	void OnRep_ChangeRedFlagStatus();
+
+	UPROPERTY(ReplicatedUsing = OnRep_ChangeBlueFlagStatus)
+	bool bBlueFlagVisible;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ChangeRedFlagStatus)
+	bool bRedFlagVisible;
 
 protected:
 	virtual void BeginPlay() override;

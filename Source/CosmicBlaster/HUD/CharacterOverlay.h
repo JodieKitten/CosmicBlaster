@@ -75,4 +75,16 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GameOverText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* BlueFlagPoint;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RedFlagPoint;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* BlueFlagImage;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* RedFlagImage;
 };

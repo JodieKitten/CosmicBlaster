@@ -44,16 +44,6 @@ void ABlasterPlayerController::DetermineInputDeviceDetails(FKey KeyPressed)
 	}
 }
 
-void ABlasterPlayerController::IA_DetectKeyboardInput(const FInputActionValue& Value)
-{
-	LastInputSource = InputType::Keyboard;
-}
-
-void ABlasterPlayerController::IA_DetectGamepadInput(const FInputActionValue& Value)
-{
-	LastInputSource = InputType::Gamepad;
-}
-
 void ABlasterPlayerController::Interact()
 {
 	ServerInteract();
@@ -82,6 +72,8 @@ void ABlasterPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
 	InputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterPlayerController::Interact);
+
+	//to stop the AnyKey binding from halting any bindings below it in the project settings input list
 	FInputActionBinding& AnyKeyBinding = InputComponent->BindAction("AnyKey", IE_Pressed, this, &ABlasterPlayerController::DetermineInputDeviceDetails);
 	AnyKeyBinding.bConsumeInput = false;
 }
@@ -159,6 +151,8 @@ void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ABlasterPlayerController, MatchState);
 	DOREPLIFETIME(ABlasterPlayerController, bShowTeamScores);
+	DOREPLIFETIME(ABlasterPlayerController, bBlueFlagVisible);
+	DOREPLIFETIME(ABlasterPlayerController, bRedFlagVisible);
 }
 
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
@@ -786,13 +780,21 @@ void ABlasterPlayerController::HideTeamScores()
 		BlasterHUD->CharacterOverlay->BlueTeamScore &&
 		BlasterHUD->CharacterOverlay->RedTeamScore &&
 		BlasterHUD->CharacterOverlay->BlueTeamText &&
-		BlasterHUD->CharacterOverlay->RedTeamText;
+		BlasterHUD->CharacterOverlay->RedTeamText &&
+		BlasterHUD->CharacterOverlay->RedFlagImage &&
+		BlasterHUD->CharacterOverlay->BlueFlagImage &&
+		BlasterHUD->CharacterOverlay->BlueFlagPoint &&
+		BlasterHUD->CharacterOverlay->RedFlagPoint;
 	if (bHUDValid)
 	{
 		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText());
 		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText());
 		BlasterHUD->CharacterOverlay->BlueTeamText->SetText(FText());
 		BlasterHUD->CharacterOverlay->RedTeamText->SetText(FText());
+		BlasterHUD->CharacterOverlay->RedFlagImage->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->BlueFlagImage->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -804,7 +806,11 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->BlueTeamScore &&
 		BlasterHUD->CharacterOverlay->RedTeamScore &&
 		BlasterHUD->CharacterOverlay->BlueTeamText &&
-		BlasterHUD->CharacterOverlay->RedTeamText;
+		BlasterHUD->CharacterOverlay->RedTeamText &&
+		BlasterHUD->CharacterOverlay->RedFlagImage &&
+		BlasterHUD->CharacterOverlay->BlueFlagImage &&
+		BlasterHUD->CharacterOverlay->BlueFlagPoint &&
+		BlasterHUD->CharacterOverlay->RedFlagPoint;
 	if (bHUDValid)
 	{
 		FString Zero("0");
@@ -814,6 +820,10 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
 		BlasterHUD->CharacterOverlay->BlueTeamText->SetText(FText::FromString(BlueTeamText));
 		BlasterHUD->CharacterOverlay->RedTeamText->SetText(FText::FromString(RedTeamText));
+		//BlasterHUD->CharacterOverlay->RedFlagImage->SetVisibility(ESlateVisibility::Visible);
+	//	BlasterHUD->CharacterOverlay->BlueFlagImage->SetVisibility(ESlateVisibility::Visible);
+		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -864,6 +874,94 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 void ABlasterPlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
 {
 	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void ABlasterPlayerController::ShowBlueFlagHUD()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->BlueFlagPoint;
+	if (bFlagIconsValid)
+	{
+		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Visible);
+		bBlueFlagVisible = true;
+	}
+}
+
+void ABlasterPlayerController::HideBlueFlagHUD()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->BlueFlagPoint;
+	if (bFlagIconsValid)
+	{
+		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+		bBlueFlagVisible = false;
+	}
+}
+
+void ABlasterPlayerController::ShowRedFlagHUD()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedFlagPoint;
+	if (bFlagIconsValid)
+	{
+		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Visible);
+		bRedFlagVisible = true;
+	}
+}
+
+void ABlasterPlayerController::HideRedFlagHUD()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedFlagPoint;
+	if (bFlagIconsValid)
+	{
+		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+		bRedFlagVisible = false;
+	}
+}
+
+void ABlasterPlayerController::OnRep_ChangeBlueFlagStatus()
+{
+	bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->BlueFlagPoint;
+	if (bFlagIconsValid)
+	{
+		if (BlasterHUD->CharacterOverlay->BlueFlagPoint->IsVisible())
+		{
+			bBlueFlagVisible = true;
+		}
+		else
+		{
+			bBlueFlagVisible = false;
+		}
+	}
+}
+
+void ABlasterPlayerController::OnRep_ChangeRedFlagStatus()
+{
+	/*bool bFlagIconsValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedFlagPoint;
+	if (bFlagIconsValid)
+	{
+		if (BlasterHUD->CharacterOverlay->RedFlagPoint->IsVisible())
+		{
+			bRedFlagVisible = true;
+		}
+		else
+		{
+			bRedFlagVisible = false;
+		}
+	}*/
 }
 
 void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)

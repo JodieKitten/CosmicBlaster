@@ -418,8 +418,6 @@ void UCombatComponent::EquipFlag(ATeamsFlag* FlagToEquip)
 	if (FlagToEquip == nullptr) return;
 	if (Character->bElimmed) return;
 
-	//if(Character->IsLocallyControlled()) UE_LOG(LogTemp, Warning, TEXT("shouldnt equip"));
-
 	EquippedFlag = FlagToEquip;
 	EquippedFlag->SetFlagState(EFlagState::EFS_Equipped);
 	AttachFlagToBackpack(EquippedFlag);

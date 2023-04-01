@@ -33,15 +33,14 @@
 #include "CosmicBlaster/Interfaces/InteractInterface.h"
 #include "CosmicBlaster/HUD/BlasterHUD.h"
 #include "CosmicBlaster/HUD/CharacterOverlay.h"
+#include "Components/TextBlock.h"
 #include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
-
 #include "CosmicBlaster/HUD/OverheadWidget.h"
 #include "Components/SpotLightComponent.h"
 
 /*
 Initial functions
 */
-
 
 void ACosmicBlasterCharacter::ScanForInteractables()
 {
@@ -1388,7 +1387,7 @@ void ACosmicBlasterCharacter::DropOrDestroyWeapons()
 		}
 		if (Combat->EquippedFlag)
 		{
-			Combat->EquippedFlag->DetachfromBackpack();
+			Combat->EquippedFlag->MulticastDropped();
 		}
 	}
 }

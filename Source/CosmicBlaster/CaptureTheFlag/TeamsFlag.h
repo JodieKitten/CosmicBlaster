@@ -32,28 +32,21 @@ public:
 	ATeamsFlag();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void FlagBehavior();
-
 	void EnableCustomDepth(bool bEnable);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFlagRespawn();
 
 	void SetFlagState(EFlagState State);
 
-	void OnDropped();
-
-	void OnEquipped();
-
-	void OnInitial();
-
-	void DetachfromBackpack();
+	void OnFlagStateSet();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastDetachfromBackpack();
+	void MulticastDropped();
+
+	void RespawnFlag();
 
 	UPROPERTY(EditAnywhere)
 	float EquippedFlagSpeed = 600.f;
+
+//	void UpdateFlagHUD();
 
 protected:
 	virtual void BeginPlay() override;
@@ -68,7 +61,7 @@ protected:
 	ABlasterPlayerController* OwningController;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flag Properties")
-	USphereComponent* OverlapSphere;
+	USphereComponent* Sphere;
 
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_FlagState, VisibleAnywhere)
@@ -78,7 +71,7 @@ private:
 	void OnRep_FlagState();
 
 	UPROPERTY(VisibleAnywhere, Category = "Flag Properties")
-	UStaticMeshComponent* FlagMesh;
+	UStaticMeshComponent* Mesh;
 
 	UPROPERTY(EditAnywhere)
 	EFlagType FlagType;
@@ -87,16 +80,16 @@ private:
 	ETeam Team;
 
 	UPROPERTY(EditAnywhere)
-	FTransform InitialSpawnLocation;
+	FVector InitialSpawnLocation;
 
-	FTimerHandle BindOverlapTimer;
-	float BindOverlapTime = 0.25f;
-//	void BindOverlapTimerFinished();
+	UPROPERTY(EditAnywhere)
+	FTransform InitialSpawnTransform;
 
 public:
+	FORCEINLINE FTransform GetInitialTransform() const { return InitialSpawnTransform; }
 	FORCEINLINE EFlagState GetFlagState() const { return FlagState; }
 	FORCEINLINE void SetFlagStateOD(EFlagState State) { FlagState = State; }
-	FORCEINLINE UStaticMeshComponent* GetFlagMesh() const { return FlagMesh; }
+	FORCEINLINE UStaticMeshComponent* GetFlagMesh() const { return Mesh; }
 	FORCEINLINE EFlagType GetFlagType() const { return FlagType; }
 	FORCEINLINE ETeam GetTeam() const { return Team; }
 };

@@ -28,6 +28,7 @@ class ULagCompensationComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
 class ABlasterGameMode;
+class ABlasterHUD;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -37,7 +38,6 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 public:
 	FTimerHandle InteractableTraceTimerHandle;
 
-	UPROPERTY(BlueprintReadWrite)
 	bool bUsingController = false;
 
 	float ControllerSpeed;
