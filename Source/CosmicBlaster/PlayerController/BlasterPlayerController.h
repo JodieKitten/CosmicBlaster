@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "EnhancedInput/Public/InputAction.h"
+#include "CosmicBlaster/BlasterTypes/InputTypes.h"
 #include "BlasterPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
@@ -27,6 +28,10 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	void DetermineInputDeviceDetails(FKey KeyPressed);
+
+	bool bIsInputDeviceGamepad = false;
+
 	void Interact();
 
 	UFUNCTION(Server, Reliable)
@@ -55,6 +60,10 @@ public:
 	void SetHUDBlueTeamScore(int32 BlueScore);
 	void SetHUDGrenades(int32 Grenades);
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
+	void ShowBlueFlagHUD();
+	void HideBlueFlagHUD();
+	void ShowRedFlagHUD();
+	void HideRedFlagHUD();
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
@@ -71,11 +80,17 @@ public:
 
 	float SingleTripTime = 0.f;
 
-	/*UPROPERTY(ReplicatedUsing = OnRep_PlayMacerena, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	bool bPlayMacerena;
+	UFUNCTION()
+	void OnRep_ChangeBlueFlagStatus();
 
 	UFUNCTION()
-	void OnRep_PlayMacerena();*/
+	void OnRep_ChangeRedFlagStatus();
+
+	UPROPERTY(ReplicatedUsing = OnRep_ChangeBlueFlagStatus)
+	bool bBlueFlagVisible;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ChangeRedFlagStatus)
+	bool bRedFlagVisible;
 
 protected:
 	virtual void BeginPlay() override;

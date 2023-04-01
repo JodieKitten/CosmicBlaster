@@ -28,6 +28,7 @@ class ULagCompensationComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
 class ABlasterGameMode;
+class ABlasterHUD;
 
 UCLASS()
 class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -36,6 +37,10 @@ class COSMICBLASTER_API ACosmicBlasterCharacter : public ACharacter, public IInt
 
 public:
 	FTimerHandle InteractableTraceTimerHandle;
+
+	bool bUsingController = false;
+
+	float ControllerSpeed;
 
 	void ScanForInteractables();
 
@@ -193,6 +198,7 @@ public:
 	void PlayFireworks(const TArray<ABlasterPlayerState*>& Players);
 	void PlayFireworkSound(const TArray<ABlasterPlayerState*>& Players);
 
+	bool bElimmed = false;
 protected:
 	virtual void BeginPlay() override;
 	void PollInit(); // poll for any relevant classes and initialize the HUD
@@ -203,9 +209,17 @@ protected:
 
 	 /* Inputs */
 	void MoveForward(float Value);
+	void MoveForwardController(float Value);
+
 	void MoveRight(float Value);
+	void MoveRightController(float Value);
+
 	void Turn(float Value);
+	void TurnController(float Value);
+
 	void LookUp(float Value);
+	void LookUpController(float Value);
+
 	void EquipButtonPressed();
 	void SwapButtonPressed();
 	void CrouchButtonPressed();
@@ -216,6 +230,10 @@ protected:
 	virtual void Jump() override;
 	void ReloadButtonPressed();
 	void GrenadeButtonPressed();
+	void ToggleLightButtonPressed();
+
+	UFUNCTION(Server, Reliable)
+	void ServerToggleLightButtonPressed();
 
 	/* Aim Offset */
 	void AimOffset(float DeltaTime);
@@ -346,7 +364,7 @@ private:
 	UMaterialInstance* OriginalMaterial;
 
 	/* Elimination */
-	bool bElimmed = false;
+	
 	FTimerHandle ElimTimer;
 	void ElimTimerFinished();
 
@@ -402,11 +420,6 @@ private:
 	bool bInitializeStartingWeapon = false;
 
 	AWeapon* StartingWeapon;
-
-
-
-
-
 
 public:
 	//getters and setters

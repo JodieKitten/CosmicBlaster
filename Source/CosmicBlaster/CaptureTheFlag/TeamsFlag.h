@@ -8,6 +8,10 @@
 #include "CosmicBlaster/BlasterTypes/Team.h"
 #include "TeamsFlag.generated.h"
 
+class ACosmicBlasterCharacter;
+class ABlasterPlayerController;
+class USphereComponent;
+
 UENUM(BlueprintType)
 enum class EFlagState : uint8
 {
@@ -25,75 +29,67 @@ class COSMICBLASTER_API ATeamsFlag : public AActor
 	GENERATED_BODY()
 
 public:
-
 	ATeamsFlag();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	//void AttachToPlayerBackpack();
-	void FlagBehavior();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFlagRespawn();
+	void EnableCustomDepth(bool bEnable);
 
 	void SetFlagState(EFlagState State);
 
-	//UFUNCTION(Server, Reliable)
-	void ServerDetachfromBackpack();
+	void OnFlagStateSet();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastDetachfromBackpack();
+	void MulticastDropped();
 
-	FORCEINLINE EFlagState GetFlagState() const { return FlagState; }
-	FORCEINLINE void SetFlagStateOD(EFlagState State) { FlagState = State; }
-	FORCEINLINE UStaticMeshComponent* GetFlagMesh() const { return FlagMesh; }
-	FORCEINLINE EFlagType GetFlagType() const { return FlagType; }
-	FORCEINLINE ETeam GetTeam() const { return Team; }
+	void RespawnFlag();
+
+	UPROPERTY(EditAnywhere)
+	float EquippedFlagSpeed = 600.f;
+
+//	void UpdateFlagHUD();
 
 protected:
-
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
-		virtual void OnSphereOverlap(
-			UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor,
-			UPrimitiveComponent* OtherComp,
-			int32 OtherBodyIndex,
-			bool bFromSweep,
-			const FHitResult& SweepResult);
+	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex, bool bFromSweep,	const FHitResult& SweepResult);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Flag")
-		class ACosmicBlasterCharacter* OwningCharacter;
+	ACosmicBlasterCharacter* OwningCharacter;
 
 	UPROPERTY()
-		class ABlasterPlayerState* BlasterPlayerState;
+	ABlasterPlayerController* OwningController;
 
-	UPROPERTY()
-		class ABlasterPlayerController* OwningController;
-
-	UPROPERTY(VisibleAnywhere, Category = "Flagproperties")
-		class USphereComponent* OverlapSphere;
+	UPROPERTY(VisibleAnywhere, Category = "Flag Properties")
+	USphereComponent* Sphere;
 
 private:
-
 	UPROPERTY(ReplicatedUsing = OnRep_FlagState, VisibleAnywhere)
-		EFlagState FlagState;
+	EFlagState FlagState;
 
 	UFUNCTION()
-		void OnRep_FlagState();
+	void OnRep_FlagState();
 
-	UPROPERTY(VisibleAnywhere, Category = "Flagproperties")
-		class UStaticMeshComponent* FlagMesh;
-
-	UPROPERTY(EditAnywhere)
-		EFlagType FlagType;
+	UPROPERTY(VisibleAnywhere, Category = "Flag Properties")
+	UStaticMeshComponent* Mesh;
 
 	UPROPERTY(EditAnywhere)
-		ETeam Team;
+	EFlagType FlagType;
 
 	UPROPERTY(EditAnywhere)
-		FVector InitialSpawnLocation;
+	ETeam Team;
 
-	FTimerHandle BindOverlapTimer;
-	float BindOverlapTime = 0.25f;
-	void BindOverlapTimerFinished();
+	UPROPERTY(EditAnywhere)
+	FVector InitialSpawnLocation;
+
+	UPROPERTY(EditAnywhere)
+	FTransform InitialSpawnTransform;
+
+public:
+	FORCEINLINE FTransform GetInitialTransform() const { return InitialSpawnTransform; }
+	FORCEINLINE EFlagState GetFlagState() const { return FlagState; }
+	FORCEINLINE void SetFlagStateOD(EFlagState State) { FlagState = State; }
+	FORCEINLINE UStaticMeshComponent* GetFlagMesh() const { return Mesh; }
+	FORCEINLINE EFlagType GetFlagType() const { return FlagType; }
+	FORCEINLINE ETeam GetTeam() const { return Team; }
 };

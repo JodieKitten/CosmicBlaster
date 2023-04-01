@@ -18,6 +18,7 @@
 #include "CosmicBlaster/GameMode/BlasterGameMode.h"
 #include "CosmicBlaster/HUD/PickupWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/SpotLightComponent.h"
 
 /*
 Initial functions
@@ -65,6 +66,10 @@ AWeapon::AWeapon()
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
 
+	SpotLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("Spot Light"));
+	SpotLight->SetupAttachment(RootComponent);
+	SpotLight->SetVisibility(false);
+
 	if (WeaponType == EWeaponType::EWT_RocketLauncher || WeaponType == EWeaponType::EWT_GrenadeLauncher)
 	{
 		bUseServerSideRewindDefault = false;
@@ -111,6 +116,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 
 	DOREPLIFETIME(AWeapon, WeaponState);
 	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
+	DOREPLIFETIME(AWeapon, bUsingSpotLight);
 }
 
 void AWeapon::OnRep_Owner()
@@ -168,46 +174,43 @@ void AWeapon::EnableCustomDepth(bool bEnable)
 	}
 }
 
+void AWeapon::SetSpotLight(bool bIsOn)
+{
+	bUsingSpotLight = bIsOn;
+	if (SpotLight)
+	{
+		SpotLight->SetVisibility(bIsOn);
+	}
+}
+
+void AWeapon::OnRep_SetSpotLight()
+{
+	if (SpotLight)
+	{
+		SpotLight->SetVisibility(bUsingSpotLight);
+	}
+}
+
 /*
 HUD
 */
 
-void AWeapon::ShowPickupWidget(bool bShowWidget)
+void AWeapon::ShowPickupWidget(bool bShowWidget, bool bUsingController)
 {
-	if (PickupWidget/*&& bShowWidget*/)
+	UPickupWidget* WeaponNameWidget = Cast<UPickupWidget>(PickupWidget->GetUserWidgetObject());
+	if (PickupWidget && WeaponNameWidget)
 	{
-		PickupWidget->SetVisibility(bShowWidget);
+		if (bUsingController)
+		{
+			WeaponNameWidget->PickupText->SetText(FText::FromString("(X) Pick up"));
+			PickupWidget->SetVisibility(bShowWidget);
+		}
+		else
+		{
+			WeaponNameWidget->PickupText->SetText(FText::FromString("(E) Pick up"));
+			PickupWidget->SetVisibility(bShowWidget);
+		}
 	}
-	/*FString TracedWeaponType;
-switch (WeaponType)
-{
-case EWeaponType::EWT_AssaultRifle:
-	TracedWeaponType = FString::Printf(TEXT("Assault Rifle"));
-	break;
-case EWeaponType::EWT_GrenadeLauncher:
-	TracedWeaponType = FString::Printf(TEXT("Grenade Launcher"));
-	break;
-case EWeaponType::EWT_Pistol:
-	TracedWeaponType = FString::Printf(TEXT("Pistol"));
-	break;
-case EWeaponType::EWT_RocketLauncher:
-	TracedWeaponType = FString::Printf(TEXT("Rocket Launcher"));
-	break;
-case EWeaponType::EWT_Shotgun:
-	TracedWeaponType = FString::Printf(TEXT("Shotgun"));
-	break;
-case EWeaponType::EWT_SniperRifle:
-	TracedWeaponType = FString::Printf(TEXT("Sniper"));
-	break;
-case EWeaponType::EWT_SubmachineGun:
-	TracedWeaponType = FString::Printf(TEXT("Submachine Gun"));
-	break;
-}
-PickupWidget->WeaponTypeText->SetText(FText::FromString(TracedWeaponType));
-PickupWidget->WeaponTypeText->SetVisibility(ESlateVisibility::Visible);*/
-	/* }
-	else if (PickupWidget && !bShowWidget)
-	{*/
 }
 
 /*
@@ -243,7 +246,7 @@ void AWeapon::OnRep_WeaponState()
 
 void AWeapon::OnEquipped()
 {
-	ShowPickupWidget(false);
+	ShowPickupWidget(false, false);
 	BoxCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetSimulatePhysics(false);
@@ -270,7 +273,7 @@ void AWeapon::OnEquipped()
 
 void AWeapon::OnEquippedSecondary()
 {
-	ShowPickupWidget(false);
+	ShowPickupWidget(false, false);
 	BoxCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BoxCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetSimulatePhysics(false);

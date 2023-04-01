@@ -87,7 +87,7 @@ void AFlag::BeginPlay()
 
 void AFlag::OnEquipped()
 {
-	ShowPickupWidget(false);
+	ShowPickupWidget(false, false);
 
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);

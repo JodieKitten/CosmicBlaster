@@ -17,6 +17,7 @@ class ACosmicBlasterCharacter;
 class ABlasterPlayerController;
 class USoundCue;
 class UPickupWidget;
+class USpotLightComponent;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -67,7 +68,7 @@ public:
 	FVector TraceEndWithScatter(const FVector& HitTarget);
 
 	/* HUD */
-	void ShowPickupWidget(bool bShowWidget);
+	void ShowPickupWidget(bool bShowWidget, bool bUsingController);
 
 	/* Textures for crosshairs */
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
@@ -102,6 +103,11 @@ public:
 	/* Enable / disable custom depth - weapon outline colour */
 
 	void EnableCustomDepth(bool bEnable);
+
+	void SetSpotLight(bool bIsOn);
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	USpotLightComponent* SpotLight;
 
 protected:
 	virtual void BeginPlay() override;
@@ -153,7 +159,6 @@ protected:
 
 	UFUNCTION()
 	void OnPingTooHigh(bool bPingTooHigh);
-
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
@@ -170,6 +175,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UWidgetComponent* PickupWidget;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SetSpotLight)
+	bool bUsingSpotLight = false;
+
+	UFUNCTION()
+	void OnRep_SetSpotLight();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass;

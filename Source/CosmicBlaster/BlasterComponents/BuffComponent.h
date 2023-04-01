@@ -22,6 +22,7 @@ public:
 	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
 	void BuffJump(float BuffJumpVelocity, float BuffTime);
 	void ReplenishShield(float ShieldAmount, float ReplenishTime);
+	void ResetSpeeds();
 
 protected:
 	virtual void BeginPlay() override;
@@ -45,7 +46,7 @@ private:
 	FTimerHandle SpeedBuffTimer;
 	float InitialBaseSpeed;
 	float InitialCrouchSpeed;
-	void ResetSpeeds();
+	
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed);

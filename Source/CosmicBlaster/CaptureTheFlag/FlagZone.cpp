@@ -31,9 +31,12 @@ void AFlagZone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		{
 			GameMode->FlagCaptured(OverlappingFlag, this);
 		}
+		UE_LOG(LogTemp, Warning, TEXT("should call respawn"));
 
-		OverlappingFlag->ServerDetachfromBackpack();
-		OverlappingFlag->MulticastFlagRespawn();
+		OverlappingFlag->RespawnFlag();
+		//OverlappingFlag->DetachFromBackpack();
+		//OverlappingFlag->MulticastFlagRespawn();
+		
 	}
 }
 
