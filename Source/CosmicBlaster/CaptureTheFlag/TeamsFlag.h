@@ -23,6 +23,9 @@ enum class EFlagState : uint8
 
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlueFlagStateChanged, EFlagState, NewFlagStateBlue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRedFlagStateChanged, EFlagState, NewFlagStateRed);
+
 UCLASS()
 class COSMICBLASTER_API ATeamsFlag : public AActor
 {
@@ -36,6 +39,7 @@ public:
 
 	void SetFlagState(EFlagState State);
 
+	UFUNCTION()
 	void OnFlagStateSet();
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -46,7 +50,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float EquippedFlagSpeed = 600.f;
 
-//	void UpdateFlagHUD();
+	FOnBlueFlagStateChanged OnBlueFlagStateChanged;
+
+	FOnRedFlagStateChanged OnRedFlagStateChanged;
 
 protected:
 	virtual void BeginPlay() override;
@@ -86,10 +92,6 @@ private:
 	FTransform InitialSpawnTransform;
 
 public:
-	FORCEINLINE FTransform GetInitialTransform() const { return InitialSpawnTransform; }
-	FORCEINLINE EFlagState GetFlagState() const { return FlagState; }
-	FORCEINLINE void SetFlagStateOD(EFlagState State) { FlagState = State; }
 	FORCEINLINE UStaticMeshComponent* GetFlagMesh() const { return Mesh; }
-	FORCEINLINE EFlagType GetFlagType() const { return FlagType; }
 	FORCEINLINE ETeam GetTeam() const { return Team; }
 };

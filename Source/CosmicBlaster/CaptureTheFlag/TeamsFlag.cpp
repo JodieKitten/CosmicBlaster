@@ -70,22 +70,20 @@ void ATeamsFlag::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		if (FlagType == EFlagType::EFT_RedFlag && Character->GetTeam() == ETeam::ET_RedTeam)
 		{
 			RespawnFlag();
-			//hide red point
 		}
 		else if (FlagType == EFlagType::EFT_BlueFlag && Character->GetTeam() == ETeam::ET_BlueTeam)
 		{
 			RespawnFlag();
-			//hide blue point
 		}
 		if (FlagType == EFlagType::EFT_RedFlag && Character->GetTeam() != ETeam::ET_RedTeam)
 		{
+			OnRedFlagStateChanged.Broadcast(EFlagState::EFS_Equipped);
 			Character->GetCombat()->EquipFlag(this);
-			//show red point
 		}
 		else if (FlagType == EFlagType::EFT_BlueFlag && Character->GetTeam() != ETeam::ET_BlueTeam)
 		{
+			OnBlueFlagStateChanged.Broadcast(EFlagState::EFS_Equipped);
 			Character->GetCombat()->EquipFlag(this);
-			//show blue point
 		}
 	}
 }
@@ -134,6 +132,16 @@ void ATeamsFlag::MulticastDropped_Implementation()
 	SetOwner(nullptr);
 	OwningCharacter = nullptr;
 	OwningController = nullptr;
+
+	if (FlagType == EFlagType::EFT_RedFlag)
+	{
+		OnRedFlagStateChanged.Broadcast(EFlagState::EFS_Dropped);
+
+	}
+	if (FlagType == EFlagType::EFT_BlueFlag)
+	{
+		OnBlueFlagStateChanged.Broadcast(EFlagState::EFS_Dropped);
+	}
 }
 
 void ATeamsFlag::RespawnFlag()
@@ -147,4 +155,14 @@ void ATeamsFlag::RespawnFlag()
 	SetActorTransform(InitialSpawnTransform);
 	EnableCustomDepth(true);
 	Sphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	if (FlagType == EFlagType::EFT_RedFlag)
+	{
+		OnRedFlagStateChanged.Broadcast(EFlagState::EFS_Initial);
+
+	}
+	if (FlagType == EFlagType::EFT_BlueFlag)
+	{
+		OnBlueFlagStateChanged.Broadcast(EFlagState::EFS_Initial);
+	}
 }

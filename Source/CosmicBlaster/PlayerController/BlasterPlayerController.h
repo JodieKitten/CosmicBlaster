@@ -7,6 +7,7 @@
 #include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "EnhancedInput/Public/InputAction.h"
 #include "CosmicBlaster/BlasterTypes/InputTypes.h"
+#include "CosmicBlaster/CaptureTheFlag/TeamsFlag.h"
 #include "BlasterPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
@@ -21,6 +22,7 @@ class UCombatComponent;
 class ABlasterPlayerState;
 class ABlasterGameState;
 class ACosmicBlasterCharacter;
+class UTexture2D;
 
 UCLASS()
 class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
@@ -28,20 +30,19 @@ class COSMICBLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	void DetermineInputDeviceDetails(FKey KeyPressed);
-
-	bool bIsInputDeviceGamepad = false;
-
-	void Interact();
-
-	UFUNCTION(Server, Reliable)
-	void ServerInteract();
-
 	FHighPingDelegate HighPingDelegate;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	void Interact();
+
+	UFUNCTION(Server, Reliable)
+	void ServerInteract();
+
+	/* Controller / Keyboard */
+	void DetermineInputDeviceDetails(FKey KeyPressed);
+	bool bIsInputDeviceGamepad = false;
 
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDShield(float Shield, float MaxShield);
@@ -60,37 +61,19 @@ public:
 	void SetHUDBlueTeamScore(int32 BlueScore);
 	void SetHUDGrenades(int32 Grenades);
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
-	void ShowBlueFlagHUD();
-	void HideBlueFlagHUD();
-	void ShowRedFlagHUD();
-	void HideRedFlagHUD();
+	void UpdateBlueFlagStateInHUD(EFlagState NewFlagState);
+	void UpdateRedFlagStateInHUD(EFlagState NewFlagState);
 
 	virtual float GetServerTime(); //synced with server world clock
 	virtual void ReceivedPlayer() override; // sync with server clock asap
+	float SingleTripTime = 0.f;
 
 	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
 	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
-
 	void CooldownCelebration();
-
 	void FireworkCelebration();
-
 	void CooldownFunctions();
-
-	float SingleTripTime = 0.f;
-
-	UFUNCTION()
-	void OnRep_ChangeBlueFlagStatus();
-
-	UFUNCTION()
-	void OnRep_ChangeRedFlagStatus();
-
-	UPROPERTY(ReplicatedUsing = OnRep_ChangeBlueFlagStatus)
-	bool bBlueFlagVisible;
-
-	UPROPERTY(ReplicatedUsing = OnRep_ChangeRedFlagStatus)
-	bool bRedFlagVisible;
 
 protected:
 	virtual void BeginPlay() override;
@@ -206,4 +189,22 @@ private:
 	float HighPingThreshold = 100.f;
 
 	float PingAnimationRunningTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* BlueFlagInitial;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* BlueFlagStolen;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* BlueFlagDropped;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* RedFlagInitial;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* RedFlagStolen;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* RedFlagDropped;
 };
