@@ -13,7 +13,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
 	UWorld* World = GetWorld();
-
+	
 	if (World && MuzzleFlashSocket && InstigatorPawn)
 	{
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());

@@ -21,14 +21,21 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "EnhancedInputComponent.h"
-
+#include "Components/Image.h"
 
 void ABlasterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	BlasterHUD = Cast<ABlasterHUD>(GetHUD());
-
+	TArray<AActor*> Flags;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamsFlag::StaticClass(), Flags);
+	for (AActor* Flag : Flags)
+	{
+		ATeamsFlag* TeamsFlag = Cast<ATeamsFlag>(Flag);
+		TeamsFlag->OnBlueFlagStateChanged.AddDynamic(this, &ABlasterPlayerController::UpdateBlueFlagStateInHUD);
+		TeamsFlag->OnRedFlagStateChanged.AddDynamic(this, &ABlasterPlayerController::UpdateRedFlagStateInHUD);
+	}
 	ServerCheckMatchState();
 }
 
@@ -151,8 +158,6 @@ void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(ABlasterPlayerController, MatchState);
 	DOREPLIFETIME(ABlasterPlayerController, bShowTeamScores);
-	DOREPLIFETIME(ABlasterPlayerController, bBlueFlagVisible);
-	DOREPLIFETIME(ABlasterPlayerController, bRedFlagVisible);
 }
 
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
@@ -782,9 +787,8 @@ void ABlasterPlayerController::HideTeamScores()
 		BlasterHUD->CharacterOverlay->BlueTeamText &&
 		BlasterHUD->CharacterOverlay->RedTeamText &&
 		BlasterHUD->CharacterOverlay->RedFlagImage &&
-		BlasterHUD->CharacterOverlay->BlueFlagImage &&
-		BlasterHUD->CharacterOverlay->BlueFlagPoint &&
-		BlasterHUD->CharacterOverlay->RedFlagPoint;
+		BlasterHUD->CharacterOverlay->BlueFlagImage;
+
 	if (bHUDValid)
 	{
 		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText());
@@ -793,8 +797,7 @@ void ABlasterPlayerController::HideTeamScores()
 		BlasterHUD->CharacterOverlay->RedTeamText->SetText(FText());
 		BlasterHUD->CharacterOverlay->RedFlagImage->SetVisibility(ESlateVisibility::Hidden);
 		BlasterHUD->CharacterOverlay->BlueFlagImage->SetVisibility(ESlateVisibility::Hidden);
-		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
-		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+
 	}
 }
 
@@ -808,9 +811,8 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->BlueTeamText &&
 		BlasterHUD->CharacterOverlay->RedTeamText &&
 		BlasterHUD->CharacterOverlay->RedFlagImage &&
-		BlasterHUD->CharacterOverlay->BlueFlagImage &&
-		BlasterHUD->CharacterOverlay->BlueFlagPoint &&
-		BlasterHUD->CharacterOverlay->RedFlagPoint;
+		BlasterHUD->CharacterOverlay->BlueFlagImage;
+
 	if (bHUDValid)
 	{
 		FString Zero("0");
@@ -820,10 +822,9 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
 		BlasterHUD->CharacterOverlay->BlueTeamText->SetText(FText::FromString(BlueTeamText));
 		BlasterHUD->CharacterOverlay->RedTeamText->SetText(FText::FromString(RedTeamText));
-		//BlasterHUD->CharacterOverlay->RedFlagImage->SetVisibility(ESlateVisibility::Visible);
-	//	BlasterHUD->CharacterOverlay->BlueFlagImage->SetVisibility(ESlateVisibility::Visible);
-		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
-		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->RedFlagImage->SetVisibility(ESlateVisibility::Visible);
+		BlasterHUD->CharacterOverlay->BlueFlagImage->SetVisibility(ESlateVisibility::Visible);
+
 	}
 }
 
@@ -876,92 +877,51 @@ void ABlasterPlayerController::BroadcastElim(APlayerState* Attacker, APlayerStat
 	ClientElimAnnouncement(Attacker, Victim);
 }
 
-void ABlasterPlayerController::ShowBlueFlagHUD()
+void ABlasterPlayerController::UpdateBlueFlagStateInHUD(EFlagState NewFlagState)
 {
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
-	bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->BlueFlagPoint;
-	if (bFlagIconsValid)
+	if (BlasterHUD)
 	{
-		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Visible);
-		bBlueFlagVisible = true;
-	}
-}
-
-void ABlasterPlayerController::HideBlueFlagHUD()
-{
-	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
-	bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->BlueFlagPoint;
-	if (bFlagIconsValid)
-	{
-		BlasterHUD->CharacterOverlay->BlueFlagPoint->SetVisibility(ESlateVisibility::Hidden);
-		bBlueFlagVisible = false;
-	}
-}
-
-void ABlasterPlayerController::ShowRedFlagHUD()
-{
-	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
-	bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->RedFlagPoint;
-	if (bFlagIconsValid)
-	{
-		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Visible);
-		bRedFlagVisible = true;
-	}
-}
-
-void ABlasterPlayerController::HideRedFlagHUD()
-{
-	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
-	bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->RedFlagPoint;
-	if (bFlagIconsValid)
-	{
-		BlasterHUD->CharacterOverlay->RedFlagPoint->SetVisibility(ESlateVisibility::Hidden);
-		bRedFlagVisible = false;
-	}
-}
-
-void ABlasterPlayerController::OnRep_ChangeBlueFlagStatus()
-{
-	bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->BlueFlagPoint;
-	if (bFlagIconsValid)
-	{
-		if (BlasterHUD->CharacterOverlay->BlueFlagPoint->IsVisible())
+		UImage* BlueFlagImage = BlasterHUD->CharacterOverlay->BlueFlagImage;
+		if (BlueFlagImage)
 		{
-			bBlueFlagVisible = true;
-		}
-		else
-		{
-			bBlueFlagVisible = false;
+			switch (NewFlagState)
+			{
+			case EFlagState::EFS_Initial:
+				BlueFlagImage->SetBrushFromTexture(BlueFlagInitial);
+				break;
+			case EFlagState::EFS_Equipped:
+				BlueFlagImage->SetBrushFromTexture(BlueFlagStolen);
+				break;
+			case EFlagState::EFS_Dropped:
+				BlueFlagImage->SetBrushFromTexture(BlueFlagDropped);
+			}
 		}
 	}
 }
 
-void ABlasterPlayerController::OnRep_ChangeRedFlagStatus()
+void ABlasterPlayerController::UpdateRedFlagStateInHUD(EFlagState NewFlagState)
 {
-	/*bool bFlagIconsValid = BlasterHUD &&
-		BlasterHUD->CharacterOverlay &&
-		BlasterHUD->CharacterOverlay->RedFlagPoint;
-	if (bFlagIconsValid)
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	if (BlasterHUD)
 	{
-		if (BlasterHUD->CharacterOverlay->RedFlagPoint->IsVisible())
+		UImage* RedFlagImage = BlasterHUD->CharacterOverlay->RedFlagImage;
+		if (RedFlagImage)
 		{
-			bRedFlagVisible = true;
+			switch (NewFlagState)
+			{
+			case EFlagState::EFS_Initial:
+				RedFlagImage->SetBrushFromTexture(RedFlagInitial);
+				break;
+			case EFlagState::EFS_Equipped:
+				RedFlagImage->SetBrushFromTexture(RedFlagStolen);
+				break;
+			case EFlagState::EFS_Dropped:
+				RedFlagImage->SetBrushFromTexture(RedFlagDropped);
+				break;
+			}
 		}
-		else
-		{
-			bRedFlagVisible = false;
-		}
-	}*/
+	}
 }
 
 void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
@@ -996,3 +956,4 @@ void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerStat
 		}
 	}
 }
+

@@ -10,6 +10,7 @@
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
 #include "CosmicBlaster/CosmicBlaster.h"
 #include "NiagaraFunctionLibrary.h"
+#include "ParticleHelper.h"
 
 AProjectile::AProjectile()
 {
@@ -36,7 +37,6 @@ void AProjectile::BeginPlay()
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
 	}
-
 }
 
 void AProjectile::SpawnTracer()
