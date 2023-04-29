@@ -22,12 +22,26 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Components/Image.h"
+#include "CosmicBlaster/HUD/PickupAmmo.h"
+#include "Components/Widget.h"
+#include "CosmicBlaster/Pickups/AmmoPickup.h"
+#include "Components/HorizontalBox.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/Border.h"
 
 void ABlasterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	BlasterHUD = Cast<ABlasterHUD>(GetHUD());
+	ServerCheckMatchState();
+
+	if (BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->HitMarker)
+	{
+		BlasterHUD->CharacterOverlay->HitMarker->SetOpacity(0.f);
+	}
+
 	TArray<AActor*> Flags;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATeamsFlag::StaticClass(), Flags);
 	for (AActor* Flag : Flags)
@@ -36,7 +50,7 @@ void ABlasterPlayerController::BeginPlay()
 		TeamsFlag->OnBlueFlagStateChanged.AddDynamic(this, &ABlasterPlayerController::UpdateBlueFlagStateInHUD);
 		TeamsFlag->OnRedFlagStateChanged.AddDynamic(this, &ABlasterPlayerController::UpdateRedFlagStateInHUD);
 	}
-	ServerCheckMatchState();
+	
 }
 
 void ABlasterPlayerController::DetermineInputDeviceDetails(FKey KeyPressed)
@@ -957,3 +971,84 @@ void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerStat
 	}
 }
 
+void ABlasterPlayerController::SetPickedUpAmmoText(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	MulticastSetPickedUpAmmoText(WeaponType, AmmoAmount);
+}
+
+void ABlasterPlayerController::MulticastSetPickedUpAmmoText_Implementation(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	FString TypeOfWeapon;
+	switch (WeaponType)
+	{
+	case EWeaponType::EWT_AssaultRifle:
+		TypeOfWeapon = FString::Printf(TEXT("Assault Rifle ammo x"));
+		break;
+	case EWeaponType::EWT_GrenadeLauncher:
+		TypeOfWeapon = FString::Printf(TEXT("Grenade Launcher ammo x"));
+		break;
+	case EWeaponType::EWT_Pistol:
+		TypeOfWeapon = FString::Printf(TEXT("Pistol ammo x"));
+		break;
+	case EWeaponType::EWT_RocketLauncher:
+		TypeOfWeapon = FString::Printf(TEXT("Rocket Launcher ammo x"));
+		break;
+	case EWeaponType::EWT_Shotgun:
+		TypeOfWeapon = FString::Printf(TEXT("Shotgun ammo x"));
+		break;
+	case EWeaponType::EWT_SniperRifle:
+		TypeOfWeapon = FString::Printf(TEXT("Sniper ammo x"));
+		break;
+	case EWeaponType::EWT_SubmachineGun:
+		TypeOfWeapon = FString::Printf(TEXT("Submachine Gun ammo x"));
+		break;
+	}
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->PickedUpAmmoText &&
+		BlasterHUD->CharacterOverlay->AmmoAmountText &&
+		BlasterHUD->CharacterOverlay->AmmoBorder;
+	if (bHUDValid)
+	{
+		BlasterHUD->CharacterOverlay->AmmoBorder->SetVisibility(ESlateVisibility::Visible);
+		BlasterHUD->CharacterOverlay->PickedUpAmmoText->SetText(FText::FromString(TypeOfWeapon));
+		BlasterHUD->CharacterOverlay->AmmoAmountText->SetText(FText::AsNumber(AmmoAmount));
+
+		float AmmoAnnouncementTime = 3.f;
+
+		GetWorldTimerManager().SetTimer(AmmoMsgTimer, this, &ABlasterPlayerController::ClearAmmoText, AmmoAnnouncementTime);
+	}
+}
+
+void ABlasterPlayerController::ClearAmmoText()
+{
+	GetWorldTimerManager().ClearTimer(AmmoMsgTimer);
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->PickedUpAmmoText &&
+		BlasterHUD->CharacterOverlay->AmmoAmountText &&
+		BlasterHUD->CharacterOverlay->AmmoBorder;
+
+	if (bHUDValid)
+	{
+		BlasterHUD->CharacterOverlay->AmmoBorder->SetVisibility(ESlateVisibility::Hidden);
+		BlasterHUD->CharacterOverlay->PickedUpAmmoText->SetText(FText());
+		BlasterHUD->CharacterOverlay->AmmoAmountText->SetText(FText());
+	}
+}
+
+void ABlasterPlayerController::SetHUDHitMarker()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->HitMarker && BlasterHUD->CharacterOverlay->HitMarkerAnimation;
+	if (bHUDValid)
+	{
+		BlasterHUD->CharacterOverlay->HitMarker->SetOpacity(1.f);
+		BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->HitMarkerAnimation, 0.f);
+	}
+}

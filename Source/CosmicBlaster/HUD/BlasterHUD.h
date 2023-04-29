@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "CosmicBlaster/Weapon/WeaponTypes.h"
 #include "BlasterHUD.generated.h"
 
 class UTexture2D;
@@ -12,6 +13,7 @@ class UUserWidget;
 class UAnnouncement;
 class UElimAnnouncement;
 class APlayerController;
+class UPickupAmmo;
 
 USTRUCT(BlueprintType)
 struct FHUDPackage
@@ -39,6 +41,7 @@ public:
 	void AddCharacterOverlay();
 	void AddAnnouncement();
 	void AddElimAnnouncement(FString Attacker, FString Victim);
+	
 
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
@@ -69,14 +72,22 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UElimAnnouncement> ElimAnnouncementClass;
 
+
+
 	UPROPERTY(EditAnywhere)
 	float ElimAnnouncementTime = 2.5f;
+
+
 
 	UFUNCTION()
 	void ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove);
 
+
+
 	UPROPERTY()
 	TArray<UElimAnnouncement*> ElimMessages;
+
+
 
 public:
 	FORCEINLINE void SetHUDPackage(const FHUDPackage& Package) { HUDPackage = Package; }

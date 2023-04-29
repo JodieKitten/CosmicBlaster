@@ -10,6 +10,10 @@
 #include "Components/HorizontalBox.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "PickupAmmo.h"
+#include "CosmicBlaster/Pickups/AmmoPickup.h"
+#include "Kismet/GameplayStatics.h"
+#include "CosmicBlaster/Weapon/WeaponTypes.h"
 
 void ABlasterHUD::BeginPlay()
 {
@@ -70,6 +74,8 @@ void ABlasterHUD::AddElimAnnouncement(FString Attacker, FString Victim)
 	}
 }
 
+
+
 void ABlasterHUD::ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove)
 {
 	if (MsgToRemove)
@@ -77,6 +83,8 @@ void ABlasterHUD::ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove)
 		MsgToRemove->RemoveFromParent();
 	}
 }
+
+
 
 void ABlasterHUD::DrawHUD()
 {

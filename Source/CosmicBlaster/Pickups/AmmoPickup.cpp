@@ -3,6 +3,7 @@
 
 #include "AmmoPickup.h"
 #include "CosmicBlaster/Character/CosmicBlasterCharacter.h"
+#include "CosmicBlaster/PlayerController/BlasterPlayerController.h"
 #include "CosmicBlaster/BlasterComponents/CombatComponent.h"
 
 void AAmmoPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -16,6 +17,12 @@ void AAmmoPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		if (Combat)
 		{
 			Combat->PickupAmmo(WeaponType, AmmoAmount);
+			ABlasterPlayerController* Controller = Cast<ABlasterPlayerController>(BlasterCharacter->GetController());
+			if (Controller)
+			{
+				Controller->SetPickedUpAmmoText(WeaponType, AmmoAmount);
+
+			}
 		}
 	}
 

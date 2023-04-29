@@ -182,17 +182,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
-//	UPROPERTY(ReplicatedUsing = OnRep_HoldingTheFlag)
 	bool bHoldingTheFlag = false;
-
-	/*UFUNCTION()
-	void OnRep_HoldingTheFlag();
-
-	UPROPERTY(ReplicatedUsing = OnRep_TheFlag)
-	AFlag* TheFlag;
-
-	UFUNCTION()
-	void OnRep_TheFlag();*/
 
 	/* Aiming / Firing */
 	bool bAimButtonPressed = false;

@@ -1201,6 +1201,8 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 	UpdateHUDShield();
 	PlayHitReactMontage();
 
+	ShowHitMarker(InstigatorController);
+
 	if (Health == 0.f)
 	{
 		if (BlasterGameMode)
@@ -1209,6 +1211,20 @@ void ACosmicBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, 
 			ABlasterPlayerController* AttackerController = Cast<ABlasterPlayerController>(InstigatorController);
 			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController, AttackerController);
 		}
+	}
+}
+
+void ACosmicBlasterCharacter::ShowHitMarker(AController* InstigatorController)
+{
+	MulticastShowHitMarker(InstigatorController);
+}
+
+void ACosmicBlasterCharacter::MulticastShowHitMarker_Implementation(AController* InstigatorController)
+{
+	ABlasterPlayerController* PlayerController = Cast<ABlasterPlayerController>(InstigatorController);
+	if (PlayerController)
+	{
+		PlayerController->SetHUDHitMarker();
 	}
 }
 

@@ -537,6 +537,6 @@ void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const T
 			TotalDamage += BodyShotDamage;
 		}
 
-		UGameplayStatics::ApplyDamage(HitCharacter, TotalDamage, Character->Controller, HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitCharacter, TotalDamage, Character->Controller, Character->GetEquippedWeapon(), UDamageType::StaticClass());
 	}
 }

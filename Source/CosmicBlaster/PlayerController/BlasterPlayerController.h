@@ -75,6 +75,15 @@ public:
 	void FireworkCelebration();
 	void CooldownFunctions();
 
+	void SetPickedUpAmmoText(EWeaponType WeaponType, int32 AmmoAmount);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetPickedUpAmmoText(EWeaponType WeaponType, int32 AmmoAmount);
+
+	void ClearAmmoText();
+
+	void SetHUDHitMarker();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -137,6 +146,8 @@ private:
 
 	UPROPERTY()
 	UReturnToMainMenu* ReturnToMainMenu;
+
+	FTimerHandle AmmoMsgTimer;
 
 	bool bReturnToMainMenuOpen = false;
 

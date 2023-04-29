@@ -9,6 +9,8 @@
 class UProgressBar;
 class UTextBlock;
 class UImage;
+class UHorizontalBox;
+class UBorder;
 
 UCLASS()
 class COSMICBLASTER_API UCharacterOverlay : public UUserWidget
@@ -81,4 +83,22 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* RedFlagImage;
+
+	UPROPERTY(meta = (BindWidget))
+	UHorizontalBox* PickedUpAmmoBox;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* PickedUpAmmoText;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* AmmoAmountText;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* HitMarkerAnimation;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* HitMarker;
+
+	UPROPERTY(meta = (BindWidget))
+	UBorder* AmmoBorder;
 };

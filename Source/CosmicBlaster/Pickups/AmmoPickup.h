@@ -24,4 +24,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+public:
+	FORCEINLINE int32 GetAmmoAmount() { return AmmoAmount; }
+	FORCEINLINE EWeaponType GetWeaponType() { return WeaponType; }
 };

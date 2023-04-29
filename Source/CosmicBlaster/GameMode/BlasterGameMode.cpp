@@ -52,7 +52,7 @@ void ABlasterGameMode::Tick(float Deltatime)
 		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f)
 		{
-			RestartGame(); //unreal engine function
+			RestartGame();
 		}
 	}
 }

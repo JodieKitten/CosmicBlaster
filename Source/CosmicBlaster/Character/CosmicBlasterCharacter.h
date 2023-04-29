@@ -248,6 +248,11 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
 private:
+	void ShowHitMarker(AController* InstigatorController);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShowHitMarker(AController* InstigatorController);
+
 	UPROPERTY()
 	ABlasterGameMode* BlasterGameMode;
 
